@@ -24,13 +24,10 @@ else:
         ValuesView,
     )
 
-from . import abc
 from .abc import MutableMultiMapping
 
 K = TypeVar("K")
 V = TypeVar("V")
-
-__all__ = ["MultiDict", "abc"]
 
 
 class MultiDict(MutableMultiMapping[K, V]):
