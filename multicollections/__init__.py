@@ -99,15 +99,15 @@ class MultiDict(MutableMapping[K, V]):
             # Key exists, replace first occurrence and remove others
             indices = self._key_indices[key]
             first_index = indices[0]
-            
+
             # Update the first occurrence
             self._items[first_index] = (key, value)
-            
+
             if len(indices) > 1:
                 # Remove duplicates efficiently by marking items as None and filtering
                 for idx in indices[1:]:
-                    self._items[idx] = None  # type: ignore
-                
+                    self._items[idx] = None
+
                 # Filter out None items and rebuild indices
                 self._items = [item for item in self._items if item is not None]
                 self._rebuild_indices()
@@ -118,7 +118,7 @@ class MultiDict(MutableMapping[K, V]):
     def _rebuild_indices(self) -> None:
         """Rebuild the key indices after items list has been modified."""
         self._key_indices = {}
-        for i, (key, value) in enumerate(self._items):
+        for i, (key, _) in enumerate(self._items):
             if key not in self._key_indices:
                 self._key_indices[key] = []
             self._key_indices[key].append(i)
@@ -134,12 +134,12 @@ class MultiDict(MutableMapping[K, V]):
         """
         if key not in self._key_indices:
             raise KeyError(key)
-        
+
         # Mark items for removal
         indices_to_remove = self._key_indices[key]
         for idx in indices_to_remove:
-            self._items[idx] = None  # type: ignore
-        
+            self._items[idx] = None
+
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
         self._rebuild_indices()
