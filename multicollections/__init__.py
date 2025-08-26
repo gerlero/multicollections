@@ -92,11 +92,13 @@ class MultiDict(MutableMapping[K, V]):
                 self._items[i] = (key, value)
                 replaced = i
                 break
-        
+
         if replaced is not None:
             # Key existed, remove any duplicates
             self._items = [
-                (k, v) for i, (k, v) in enumerate(self._items) if i == replaced or k != key
+                (k, v)
+                for i, (k, v) in enumerate(self._items)
+                if i == replaced or k != key
             ]
         else:
             # Key didn't exist, add it
