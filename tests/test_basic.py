@@ -165,6 +165,26 @@ class TestMultiDictBasic:
         del md["a"]  # Removes both 'a' items
         assert len(md) == 1
 
+    def test_repr(self) -> None:
+        """Test __repr__ method."""
+        # Test empty MultiDict
+        md_empty = MultiDict()
+        assert repr(md_empty) == "MultiDict([])"
+
+        # Test MultiDict with single item
+        md_single = MultiDict([("a", 1)])
+        assert repr(md_single) == "MultiDict([('a', 1)])"
+
+        # Test MultiDict with multiple items including duplicates
+        md_multi = MultiDict([("a", 1), ("b", 2), ("a", 3)])
+        assert repr(md_multi) == "MultiDict([('a', 1), ('b', 2), ('a', 3)])"
+
+        # Test that repr can be used to recreate equivalent objects
+        original = MultiDict([("x", "hello"), ("y", 42), ("x", "world")])
+        repr_str = repr(original)
+        recreated = eval(repr_str)  # noqa: S307
+        assert list(original.items()) == list(recreated.items())
+
 
 class TestMultiDictEdgeCases:
     """Test edge cases and various data scenarios."""
@@ -235,3 +255,4 @@ class TestMultiDictInterface:
         assert hasattr(md, "__delitem__")
         assert hasattr(md, "__iter__")
         assert hasattr(md, "__len__")
+        assert hasattr(md, "__repr__")

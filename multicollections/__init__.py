@@ -162,3 +162,7 @@ class MultiDict(MutableMapping[K, V]):
     def __len__(self) -> int:
         """Return the total number of items."""
         return len(self._items)
+
+    def __repr__(self) -> str:
+        """Return a string representation of the MultiDict."""
+        return f"{self.__class__.__name__}({list(self._items)!r})"
