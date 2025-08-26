@@ -11,7 +11,6 @@ if sys.version_info >= (3, 9):
         Iterable,
         Iterator,
         Mapping,
-        MutableMapping,
         Sequence,
         ValuesView,
     )
@@ -21,16 +20,20 @@ else:
         Iterable,
         Iterator,
         Mapping,
-        MutableMapping,
         Sequence,
         ValuesView,
     )
 
+from . import abc
+from .abc import MutableMultiMapping
+
 K = TypeVar("K")
 V = TypeVar("V")
 
+__all__ = ["MultiDict", "abc"]
 
-class MultiDict(MutableMapping[K, V]):
+
+class MultiDict(MutableMultiMapping[K, V]):
     """A fully generic dictionary that allows multiple values with the same key.
 
     Preserves insertion order.
@@ -126,6 +129,19 @@ class MultiDict(MutableMapping[K, V]):
     def add(self, key: K, value: V) -> None:
         """Add a value for a key."""
         self._add_item(key, value)
+
+    def getall(self, key: K, default: list[V] | None = None) -> list[V]:
+        """Get all values for a key.
+
+        Returns the default value if the key is not found.
+        """
+        if key not in self._key_indices:
+            if default is None:
+                return []
+            return default
+
+        indices = self._key_indices[key]
+        return [self._items[idx][1] for idx in indices]
 
     def __delitem__(self, key: K) -> None:
         """Remove all values for a key.
