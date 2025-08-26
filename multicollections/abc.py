@@ -51,6 +51,14 @@ class MultiMapping(Mapping[K, V]):
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError
 
+    @abstractmethod
+    def getall(self, key: K, default: list[V] | None = None) -> list[V]:
+        """Get all values for a key.
+
+        Returns the default value if the key is not found.
+        """
+        raise NotImplementedError
+
 
 class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
     """Abstract base class for mutable multi-mapping collections.
