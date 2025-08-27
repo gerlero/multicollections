@@ -102,6 +102,7 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
         """
         raise NotImplementedError  # pragma: no cover
 
+    @abstractmethod
     def __iter__(self) -> Iterator[K]:
         """Return an iterator over the keys.
 
@@ -109,6 +110,7 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
         """
         raise NotImplementedError  # pragma: no cover
 
+    @abstractmethod
     def __len__(self) -> int:
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError  # pragma: no cover
@@ -179,6 +181,7 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
     A mutable multi-mapping extends MultiMapping with methods to modify the collection.
     """
 
+    @abstractmethod
     def __setitem__(self, key: K, value: V) -> None:
         """Set the value for a key.
 
