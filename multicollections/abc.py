@@ -78,7 +78,7 @@ class ValuesView(MultiMappingView):
 
     def __contains__(self, value: V) -> bool:
         """Check if the value is in the mapping."""
-        return any(value in self._mapping.getall(key) for key in set(self._mapping))
+        return value in iter(self)
 
     def __iter__(self) -> Iterator[V]:
         """Return an iterator over the values."""
