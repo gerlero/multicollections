@@ -1,6 +1,6 @@
 # multicollections
 
-A fully generic `MultiDict` class that allows multiple values for the same key while preserving insertion order.
+A fully generic [`MultiDict`](https://multicollections.readthedocs.io/en/latest/api/multicollections/) class that allows multiple values for the same key while preserving insertion order.
 
 [![Documentation](https://img.shields.io/readthedocs/multicollections)](https://multicollections.readthedocs.io/)
 [![CI](https://github.com/gerlero/multicollections/actions/workflows/ci.yml/badge.svg)](https://github.com/gerlero/multicollections/actions/workflows/ci.yml)
@@ -15,11 +15,13 @@ A fully generic `MultiDict` class that allows multiple values for the same key w
 ## ✨ Features
 
 - **🔑 Multiple values per key**: Store multiple values for the same key, perfect for handling data like HTTP headers, form data, or configuration files
-- **📝 Insertion order preserved**: Maintains the order in which items were added
-- **🔄 Full compatibility**: Implements the `MutableMultiMapping` abstract base class with rich multi-value support
-- **⚡ Type-safe**: Fully typed with generics for excellent IDE support
+- **📝 Insertion order preserved**: Maintains the order in which items are added
+- **🧩 Fully generic**: Accepts any types for both keys and values
+- **✅ Thoroughly tested**: 100% code coverage
+- **⚡ Type-safe**: Fully typed with generics
 - **🪶 Lightweight**: Zero dependencies, pure Python implementation
-- **🎯 Rich API**: Includes `getall()`, `popall()`, `popone()`, `add()`, and more specialized methods
+- **🎯 Rich, compatible API**: Implements the [`multidict` API](https://multidict.aio-libs.org/en/stable/multidict/#multidict)
+- **📐 Abstract base classes**: The [`multicollections.abc`](https://multicollections.readthedocs.io/en/latest/api/abc/) module provides a common interface for other custom multi-value collections
 
 ## 📦 Installation
 
@@ -32,12 +34,8 @@ pip install multicollections
 ### conda
 
 ```bash
-# Install from PyPI using conda's pip
-conda install pip
-pip install multicollections
+conda install -c conda-forge multicollections
 ```
-
-> **Note**: This package is not yet available on conda-forge. The above method installs from PyPI using conda's pip.
 
 ## 🚀 Quick Start
 
@@ -85,59 +83,17 @@ config = MultiDict(host='localhost', port=8080, debug=True)
 mixed = MultiDict([('a', 1), ('b', 2)], c=3, d=4)
 ```
 
-## ⚡ Advanced Features
-
-`MultiDict` implements the `MutableMultiMapping` abstract base class, providing powerful methods for handling multiple values:
-
-```python
-from multicollections import MultiDict
-
-data = MultiDict([('tags', 'python'), ('tags', 'web'), ('category', 'tutorial')])
-
-# Get all values for a key
-all_tags = data.getall('tags')
-print(all_tags)  # ['python', 'web']
-
-# Safe get with default for missing keys
-missing_tags = data.getall('missing', default=[])
-print(missing_tags)  # []
-
-# Get one value with default
-lang = data.getone('language', default='unknown')
-print(lang)  # 'unknown'
-
-# Remove and return one value
-first_tag = data.popone('tags')
-print(first_tag)  # 'python'
-print(data.getall('tags'))  # ['web']
-
-# Remove and return all values
-remaining_tags = data.popall('tags')
-print(remaining_tags)  # ['web']
-
-# Extend with multiple items
-data.extend([('tags', 'api'), ('tags', 'flask')])
-print(data.getall('tags'))  # ['api', 'flask']
-
-# Update vs extend: update replaces, extend adds
-data.update([('category', 'advanced')])  # Replaces 'tutorial'
-data.extend([('category', 'guide')])     # Adds alongside 'advanced'
-print(data.getall('category'))  # ['advanced', 'guide']
-```
-
 ## 📖 Why MultiDict?
 
-Standard Python dictionaries can only hold one value per key. When you need to handle data formats that naturally allow multiple values for the same key, `MultiDict` is the perfect solution:
+Standard Python dictionaries can only hold one value per key. When you need to handle data formats that naturally allow multiple values for the same key, [`MultiDict`](https://multicollections.readthedocs.io/en/latest/api/multicollections/) is the perfect solution:
 
 - **HTTP headers**: Multiple `Accept` or `Set-Cookie` headers
 - **URL query parameters**: `?tag=python&tag=web&tag=api`
 - **Form data**: Multiple form fields with the same name
 - **Configuration files**: Multiple values for the same configuration key
 
+As opposed to the popular [`multidict`](https://github.com/aio-libs/multidict) package, `multicollections`'s [`MultiDict`](https://multicollections.readthedocs.io/en/latest/api/multicollections/) implementation allows both keys and values to be of any type, providing greater flexibility.
+
 ## 🔗 Documentation
 
 For detailed documentation, examples, and API reference, visit: https://multicollections.readthedocs.io/
-
-## 📄 License
-
-This project is licensed under the Apache License 2.0 - see the [LICENSE.txt](LICENSE.txt) file for details.
