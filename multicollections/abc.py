@@ -4,23 +4,82 @@ from __future__ import annotations
 
 import sys
 from abc import abstractmethod
-from typing import TypeVar
+from collections import defaultdict
+from typing import TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
         Iterator,
+        KeysView,
         Mapping,
+        MappingView,
         MutableMapping,
+        ValuesView,
     )
 else:
     from typing import (
         Iterator,
+        KeysView,
         Mapping,
+        MappingView,
         MutableMapping,
+        ValuesView,
     )
 
 K = TypeVar("K")
 V = TypeVar("V")
+D = TypeVar("D")
+
+
+class MultiMappingView(MappingView):
+    """Base class for MultiMapping views."""
+
+    def __init__(self, mapping: MultiMapping[K, V]) -> None:
+        """Initialize the view with the given mapping."""
+        super().__init__(mapping)
+
+
+class KeysView(MultiMappingView):
+    """View for the keys in a MultiMapping."""
+
+    def __contains__(self, key: K) -> bool:
+        """Check if the key is in the mapping."""
+        return key in self._mapping
+
+    def __iter__(self) -> Iterator[K]:
+        """Return an iterator over the keys."""
+        return iter(self._mapping)
+
+
+class ItemsView(MultiMappingView):
+    """View for the items (key-value pairs) in a MultiMapping."""
+
+    def __contains__(self, item: tuple[K, V]) -> bool:
+        """Check if the item is in the mapping."""
+        key, value = item
+        try:
+            return value in self._mapping.getall(key)
+        except KeyError:
+            return False
+
+    def __iter__(self) -> Iterator[tuple[K, V]]:
+        """Return an iterator over the items (key-value pairs)."""
+        counts = defaultdict(int)
+        for k in self._mapping:
+            yield (k, self._mapping.getall(k)[counts[k]])
+            counts[k] += 1
+
+
+class ValuesView(MultiMappingView):
+    """View for the values in a MultiMapping."""
+
+    def __contains__(self, value: V) -> bool:
+        """Check if the value is in the mapping."""
+        return any(value in self._mapping.getall(key) for key in set(self._mapping))
+
+    def __iter__(self) -> Iterator[V]:
+        """Return an iterator over the values."""
+        yield from (v for _, v in self._mapping.items())
 
 
 class MultiMapping(Mapping[K, V]):
@@ -30,12 +89,14 @@ class MultiMapping(Mapping[K, V]):
     This class provides a read-only interface to such collections.
     """
 
-    @abstractmethod
-    def __getitem__(self, key: K) -> V:
-        """Get the first value for a key.
+    class _NoDefault:
+        pass
 
-        Raises a `KeyError` if the key is not found.
-        """
+    _NO_DEFAULT = _NoDefault()
+
+    @abstractmethod
+    def _getall(self, key: K) -> list[V]:
+        """Get all values for a key."""
         raise NotImplementedError
 
     @abstractmethod
@@ -50,6 +111,66 @@ class MultiMapping(Mapping[K, V]):
     def __len__(self) -> int:
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError
+
+    @overload
+    def getone(self, key: K) -> V: ...
+
+    @overload
+    def getone(self, key: K, default: D) -> V | D: ...
+
+    def getone(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> V | D:
+        """Get the first value for a key.
+
+        Raises a `KeyError` if the key is not found and no default is provided.
+        """
+        try:
+            return self.getall(key)[0]
+        except KeyError:
+            if default is self._NO_DEFAULT:
+                raise
+            return default  # ty: ignore[invalid-return-type]
+
+    def __getitem__(self, key: K) -> V:
+        """Get the first value for a key.
+
+        Raises a `KeyError` if the key is not found.
+        """
+        return self.getone(key)
+
+    @overload
+    def getall(self, key: K) -> list[V]: ...
+
+    @overload
+    def getall(self, key: K, default: D) -> list[V] | D: ...
+
+    def getall(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> list[V] | D:
+        """Get all values for a key as a list.
+
+        Raises a `KeyError` if the key is not found and no default is provided.
+        """
+        try:
+            ret = self._getall(key)
+        except KeyError:
+            if default is self._NO_DEFAULT:
+                raise
+            return default  # ty: ignore[invalid-return-type]
+        if not ret:
+            if default is self._NO_DEFAULT:
+                raise KeyError(key)
+            return default  # ty: ignore[invalid-return-type]
+        return ret
+
+    def keys(self) -> KeysView[K]:
+        """Return a view of the keys in the MultiMapping."""
+        return KeysView(self)
+
+    def items(self) -> ItemsView[K, V]:
+        """Return a view of the items (key-value pairs) in the MultiMapping."""
+        return ItemsView(self)
+
+    def values(self) -> ValuesView[V]:
+        """Return a view of the values in the MultiMapping."""
+        return ValuesView(self)
 
 
 class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
