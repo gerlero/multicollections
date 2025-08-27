@@ -14,27 +14,32 @@ if sys.version_info >= (3, 9):
         Iterable,
         Iterator,
         Mapping,
+        MappingView,
         MutableMapping,
         Sequence,
     )
 else:
-    from typing import Collection, Iterable, Iterator, Mapping, MutableMapping, Sequence
+    from typing import (
+        Collection,
+        Iterable,
+        Iterator,
+        Mapping,
+        MappingView,
+        MutableMapping,
+        Sequence,
+    )
 
 K = TypeVar("K")
 V = TypeVar("V")
 D = TypeVar("D")
 
 
-class MultiMappingView(Collection):
+class MultiMappingView(MappingView, Collection):
     """Base class for MultiMapping views."""
 
     def __init__(self, mapping: MultiMapping[K, V]) -> None:
         """Initialize the view with the given mapping."""
-        self._mapping = mapping
-
-    def __len__(self) -> int:
-        """Return the number of items in the mapping."""
-        return len(self._mapping)
+        super().__init__(mapping)
 
 
 class KeysView(MultiMappingView):
