@@ -160,8 +160,6 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
             return default  # ty: ignore[invalid-return-type]
         return ret
 
-
-
     def keys(self) -> KeysView[K]:
         """Return a view of the keys in the MultiMapping."""
         return KeysView(self)
