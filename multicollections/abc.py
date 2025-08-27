@@ -89,8 +89,11 @@ class MultiMapping(ABC, Generic[K, V]):
 
     @abstractmethod
     def _getall(self, key: K) -> list[V]:
-        """Get all values for a key."""
-        raise NotImplementedError
+        """Get all values for a key.
+
+        Returns an empty list if no values are found.
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
     def __iter__(self) -> Iterator[K]:
@@ -98,12 +101,12 @@ class MultiMapping(ABC, Generic[K, V]):
 
         Keys with multiple values will be yielded multiple times.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
     def __len__(self) -> int:
         """Return the total number of items (key-value pairs)."""
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     def __contains__(self, key: K) -> bool:
         """Check if the key is present in the multi-mapping."""
@@ -151,10 +154,9 @@ class MultiMapping(ABC, Generic[K, V]):
         """
         try:
             ret = self._getall(key)
-        except KeyError:
-            if default is _NO_DEFAULT:
-                raise
-            return default  # ty: ignore[invalid-return-type]
+        except KeyError as e:  # pragma: no cover
+            msg = "_getall must return an empty list instead of raising KeyError"
+            raise RuntimeError(msg) from e
         if not ret:
             if default is _NO_DEFAULT:
                 raise KeyError(key)
@@ -197,21 +199,25 @@ class MutableMultiMapping(MultiMapping[K, V]):
     def __setitem__(self, key: K, value: V) -> None:
         """Set the value for a key.
 
-        This should replace all existing values for the key with a single new value.
+        If the key does not exist, it is added with the specified value.
+
+        If the key already exists, the first item is assigned the new value,
+        and any other items with the same key are removed.
         """
-        raise NotImplementedError
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
     def add(self, key: K, value: V) -> None:
-        """Add a value for a key.
-
-        This should add the value without removing existing values for the key.
-        """
-        raise NotImplementedError
+        """Add a new value for a key."""
+        raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
     def _popone(self, key: K) -> V:
-        raise NotImplementedError
+        """Remove and return the first value for a key.
+
+        Raises a `KeyError` if the key is not found.
+        """
+        raise NotImplementedError  # pragma: no cover
 
     @overload
     def popone(self, key: K) -> V: ...
