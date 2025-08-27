@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TypeVar
+from typing import TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -20,10 +20,13 @@ else:
         Sequence,
     )
 
-from .abc import MutableMultiMapping
+import itertools
+
+from .abc import MutableMultiMapping, _NoDefault, _NO_DEFAULT
 
 K = TypeVar("K")
 V = TypeVar("V")
+D = TypeVar("D")
 
 
 class MultiDict(MutableMultiMapping[K, V]):
@@ -81,6 +84,9 @@ class MultiDict(MutableMultiMapping[K, V]):
                 # Filter out None items and rebuild indices
                 self._items = [item for item in self._items if item is not None]
                 self._rebuild_indices()
+            else:
+                # Only one value existed, just update the index (no rebuild needed)
+                self._key_indices[key] = [first_index]
         else:
             # Key doesn't exist, add it
             self._add_item(key, value)
@@ -106,12 +112,19 @@ class MultiDict(MutableMultiMapping[K, V]):
         first_index = indices[0]
         value = self._items[first_index][1]
 
-        # Mark the first item for removal
-        self._items[first_index] = None
-
-        # Filter out None items and rebuild indices
-        self._items = [item for item in self._items if item is not None]
-        self._rebuild_indices()
+        if len(indices) == 1:
+            # Only one item with this key - can remove efficiently
+            del self._items[first_index]
+            del self._key_indices[key]
+            
+            # Update indices for items that came after the removed one
+            for k, idx_list in self._key_indices.items():
+                self._key_indices[k] = [idx - 1 if idx > first_index else idx for idx in idx_list]
+        else:
+            # Multiple items with this key - mark and rebuild
+            self._items[first_index] = None
+            self._items = [item for item in self._items if item is not None]
+            self._rebuild_indices()
 
         return value
 
@@ -142,6 +155,67 @@ class MultiDict(MutableMultiMapping[K, V]):
     def __len__(self) -> int:
         """Return the total number of items."""
         return len(self._items)
+
+    @overload
+    def popall(self, key: K) -> list[V]: ...
+
+    @overload  
+    def popall(self, key: K, default: D) -> list[V] | D: ...
+
+    def popall(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> list[V] | D:
+        """Remove and return all values for a key as a list.
+        
+        More efficient than the ABC implementation which calls popone() repeatedly.
+        """
+        if key not in self._key_indices:
+            if default is _NO_DEFAULT:
+                raise KeyError(key)
+            return default  # type: ignore[return-value]
+        
+        # Get all indices for this key
+        indices = self._key_indices[key]
+        
+        # Collect all values before removal
+        values = [self._items[i][1] for i in indices]
+        
+        # Mark all items for removal
+        for idx in indices:
+            self._items[idx] = None
+        
+        # Filter out None items and rebuild indices
+        self._items = [item for item in self._items if item is not None]
+        self._rebuild_indices()
+        
+        return values
+
+    def update(
+        self,
+        other: Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        **kwargs: V,
+    ) -> None:
+        """Update the multi-mapping with items from another object.
+
+        This replaces existing values for keys found in the other object.
+        More efficient than the ABC implementation for our data structure.
+        """
+        existing_keys = set(self._key_indices.keys())
+        items = other.items() if isinstance(other, Mapping) else other
+        items = itertools.chain(items, kwargs.items())
+        
+        for key, value in items:
+            if key in existing_keys:
+                self[key] = value
+                existing_keys.discard(key)  # Remove from set to avoid duplicate processing
+            else:
+                self.add(key, value)
+
+    def clear(self) -> None:
+        """Remove all items from the multi-mapping.
+        
+        More efficient than the ABC implementation which calls popall() for each key.
+        """
+        self._items.clear()
+        self._key_indices.clear()
 
     def __repr__(self) -> str:
         """Return a string representation of the MultiDict."""
