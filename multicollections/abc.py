@@ -4,30 +4,42 @@ from __future__ import annotations
 
 import itertools
 import sys
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections import defaultdict
 from typing import Generic, TypeVar, overload
 
 if sys.version_info >= (3, 9):
-    from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import (
+        Collection,
+        Iterable,
+        Iterator,
+        Mapping,
+        MappingView,
+        MutableMapping,
+        Sequence,
+    )
 else:
-    from typing import Collection, Iterable, Iterator, Mapping, Sequence
+    from typing import (
+        Collection,
+        Iterable,
+        Iterator,
+        Mapping,
+        MappingView,
+        MutableMapping,
+        Sequence,
+    )
 
 K = TypeVar("K")
 V = TypeVar("V")
 D = TypeVar("D")
 
 
-class MultiMappingView(Collection):
+class MultiMappingView(MappingView, Collection):
     """Base class for MultiMapping views."""
 
     def __init__(self, mapping: MultiMapping[K, V]) -> None:
         """Initialize the view with the given mapping."""
-        self._mapping = mapping
-
-    def __len__(self) -> int:
-        """Return the number of items in the mapping."""
-        return len(self._mapping)
+        super().__init__(mapping)
 
 
 class KeysView(MultiMappingView):
@@ -80,7 +92,7 @@ class _NoDefault:
 _NO_DEFAULT = _NoDefault()
 
 
-class MultiMapping(ABC, Generic[K, V]):
+class MultiMapping(Mapping[K, V], Generic[K, V]):
     """Abstract base class for multi-mapping collections.
 
     A multi-mapping is a mapping that can hold multiple values for the same key.
@@ -107,14 +119,6 @@ class MultiMapping(ABC, Generic[K, V]):
     def __len__(self) -> int:
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError  # pragma: no cover
-
-    def __contains__(self, key: K) -> bool:
-        """Check if the key is present in the multi-mapping."""
-        try:
-            self[key]
-        except KeyError:
-            return False
-        return True
 
     @overload
     def getone(self, key: K) -> V: ...
@@ -163,19 +167,6 @@ class MultiMapping(ABC, Generic[K, V]):
             return default  # ty: ignore[invalid-return-type]
         return ret
 
-    @overload
-    def get(self, key: K, default: D) -> V | D: ...
-
-    @overload
-    def get(self, key: K, default: None = None) -> V | None: ...
-
-    def get(self, key: K, default: D | None = None) -> V | D | None:
-        """Get the value for a key or return a default value."""
-        try:
-            return self[key]
-        except KeyError:
-            return default
-
     def keys(self) -> KeysView[K]:
         """Return a view of the keys in the MultiMapping."""
         return KeysView(self)
@@ -189,7 +180,7 @@ class MultiMapping(ABC, Generic[K, V]):
         return ValuesView(self)
 
 
-class MutableMultiMapping(MultiMapping[K, V]):
+class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
     """Abstract base class for mutable multi-mapping collections.
 
     A mutable multi-mapping extends MultiMapping with methods to modify the collection.
@@ -280,20 +271,6 @@ class MutableMultiMapping(MultiMapping[K, V]):
         """
         return self.popall(key)
 
-    @overload
-    def setdefault(self, key: K, default: D) -> V | D: ...
-
-    @overload
-    def setdefault(self, key: K, default: None = None) -> V | None: ...
-
-    def setdefault(self, key: K, default: D | None = None) -> V | D | None:
-        """Return the first value for a key if it exists, or set it to the default."""
-        try:
-            return self[key]
-        except KeyError:
-            self[key] = default
-            return default
-
     def clear(self) -> None:
         """Remove all items from the multi-mapping."""
         for key in set(self.keys()):
@@ -301,18 +278,18 @@ class MutableMultiMapping(MultiMapping[K, V]):
 
     def extend(
         self,
-        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        other: Mapping[K, V] | Iterable[Sequence[K | V]] = (),
         **kwargs: V,
     ) -> None:
         """Extend the multi-mapping with items from another object."""
-        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         for key, value in items:
             self.add(key, value)
 
     def merge(
         self,
-        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        other: Mapping[K, V] | Iterable[Sequence[K | V]] = (),
         **kwargs: V,
     ) -> None:
         """Merge another object into the multi-mapping.
@@ -320,7 +297,7 @@ class MutableMultiMapping(MultiMapping[K, V]):
         Keys from `other` that already exist in the multi-mapping will not be replaced.
         """
         existing_keys = set(self.keys())
-        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         for key, value in items:
             if key not in existing_keys:
@@ -328,7 +305,7 @@ class MutableMultiMapping(MultiMapping[K, V]):
 
     def update(
         self,
-        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        other: Mapping[K, V] | Iterable[Sequence[K | V]] = (),
         **kwargs: V,
     ) -> None:
         """Update the multi-mapping with items from another object.
@@ -336,7 +313,7 @@ class MutableMultiMapping(MultiMapping[K, V]):
         This replaces existing values for keys found in the other object.
         """
         existing_keys = set(self.keys())
-        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         for key, value in items:
             if key in existing_keys:
