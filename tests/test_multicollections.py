@@ -649,11 +649,12 @@ def test_update_method(cls: type[MutableMultiMapping]) -> None:
     md = cls([("a", 1), ("b", 2), ("a", 3)])  # ty: ignore [too-many-positional-arguments]
 
     # Test updating with pairs (should replace existing keys)
-    md.update([("a", 999), ("c", 4)])
-    assert len(md) == 3
+    md.update([("a", 999), ("c", 4), ("a", 5)])
+    assert len(md) == 4
     assert md["a"] == 999  # Replaced (duplicates removed)
     assert md["b"] == 2  # Unchanged
     assert md["c"] == 4  # New key added
+    assert md.getall("a") == [999, 5]  # Both 'a' values present
 
     # Test updating with dict
     md2 = cls([("x", 10), ("y", 20)])  # ty: ignore [too-many-positional-arguments]
@@ -670,6 +671,15 @@ def test_update_method(cls: type[MutableMultiMapping]) -> None:
     assert md3["a"] == 999  # Replaced
     assert md3["b"] == 2  # Unchanged
     assert md3["c"] == 3  # New key added
+
+    # Test updating with args and kwargs
+    md4 = cls([("a", 1), ("b", 2)])  # ty: ignore [too-many-positional-arguments]
+    md4.update([("a", 999), ("c", 3)], a=4)
+    assert len(md4) == 4
+    assert md4["a"] == 999  # Replaced
+    assert md4["b"] == 2  # Unchanged
+    assert md4["c"] == 3  # New key added
+    assert md4.getall("a") == [999, 4]  # Both 'a' values present
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
