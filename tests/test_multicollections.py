@@ -41,11 +41,8 @@ class ListMultiDict(MutableMultiMapping[K, V]):
         for key, value in kwargs.items():
             self._items.append((key, value))
 
-    def __getitem__(self, key: K) -> V:
-        for k, v in self._items:
-            if k == key:
-                return v
-        raise KeyError(key)
+    def _getall(self, key: K) -> list[V]:
+        return [v for k, v in self._items if k == key]
 
     def __setitem__(self, key: K, value: V) -> None:
         replaced: int | None = None
