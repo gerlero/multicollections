@@ -113,14 +113,6 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError  # pragma: no cover
 
-    def __contains__(self, key: K) -> bool:
-        """Check if the key is present in the multi-mapping."""
-        try:
-            self[key]
-        except KeyError:
-            return False
-        return True
-
     @overload
     def getone(self, key: K) -> V: ...
 
@@ -168,18 +160,7 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
             return default  # ty: ignore[invalid-return-type]
         return ret
 
-    @overload
-    def get(self, key: K, default: D) -> V | D: ...
 
-    @overload
-    def get(self, key: K, default: None = None) -> V | None: ...
-
-    def get(self, key: K, default: D | None = None) -> V | D | None:
-        """Get the value for a key or return a default value."""
-        try:
-            return self[key]
-        except KeyError:
-            return default
 
     def keys(self) -> KeysView[K]:
         """Return a view of the keys in the MultiMapping."""
@@ -283,20 +264,6 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
         Raises a `KeyError` if the key is not found.
         """
         return self.popall(key)
-
-    @overload
-    def setdefault(self, key: K, default: D) -> V | D: ...
-
-    @overload
-    def setdefault(self, key: K, default: None = None) -> V | None: ...
-
-    def setdefault(self, key: K, default: D | None = None) -> V | D | None:
-        """Return the first value for a key if it exists, or set it to the default."""
-        try:
-            return self[key]
-        except KeyError:
-            self[key] = default
-            return default
 
     def clear(self) -> None:
         """Remove all items from the multi-mapping."""
