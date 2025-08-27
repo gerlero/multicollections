@@ -234,6 +234,27 @@ def test_values_view(cls: type[MutableMultiMapping]) -> None:
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_values_view_contains(cls: type[MutableMultiMapping]) -> None:
+    """Test values() view __contains__ method."""
+    md = cls([("a", 1), ("b", 2), ("a", 3)])  # ty: ignore [too-many-positional-arguments]
+    values = md.values()
+
+    # Test containment for existing values
+    assert 1 in values
+    assert 2 in values
+    assert 3 in values
+
+    # Test containment for non-existing values
+    assert 4 not in values
+    assert 0 not in values
+
+    # Test empty case
+    empty_md = cls()
+    empty_values = empty_md.values()
+    assert 1 not in empty_values
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
 def test_items_view(cls: type[MutableMultiMapping]) -> None:
     """Test items() view."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])  # ty: ignore [too-many-positional-arguments]
@@ -241,6 +262,28 @@ def test_items_view(cls: type[MutableMultiMapping]) -> None:
 
     assert len(items) == 3
     assert list(items) == [("a", 1), ("b", 2), ("a", 3)]
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_items_view_contains(cls: type[MutableMultiMapping]) -> None:
+    """Test items() view __contains__ method."""
+    md = cls([("a", 1), ("b", 2), ("a", 3)])  # ty: ignore [too-many-positional-arguments]
+    items = md.items()
+
+    # Test containment for existing items
+    assert ("a", 1) in items
+    assert ("b", 2) in items
+    assert ("a", 3) in items
+
+    # Test containment for non-existing items
+    assert ("a", 2) not in items  # Key exists but wrong value
+    assert ("c", 1) not in items  # Key doesn't exist
+    assert ("b", 1) not in items  # Wrong value for existing key
+
+    # Test empty case
+    empty_md = cls()
+    empty_items = empty_md.items()
+    assert ("a", 1) not in empty_items
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
