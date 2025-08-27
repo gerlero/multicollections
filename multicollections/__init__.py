@@ -26,6 +26,16 @@ K = TypeVar("K")
 V = TypeVar("V")
 
 
+class _DeletedMarker:
+    """Sentinel object to mark items for deletion."""
+
+    def __repr__(self) -> str:
+        return "<DELETED>"
+
+
+_DELETED = _DeletedMarker()
+
+
 class MultiDict(MutableMultiMapping[K, V]):
     """A fully generic dictionary that allows multiple values with the same key.
 
@@ -74,12 +84,12 @@ class MultiDict(MutableMultiMapping[K, V]):
             self._items[first_index] = (key, value)
 
             if len(indices) > 1:
-                # Remove duplicates efficiently by marking items as None and filtering
+                # Remove duplicates by marking items as deleted and filtering
                 for idx in indices[1:]:
-                    self._items[idx] = None
+                    self._items[idx] = _DELETED
 
-                # Filter out None items and rebuild indices
-                self._items = [item for item in self._items if item is not None]
+                # Filter out deleted items and rebuild indices
+                self._items = [item for item in self._items if item is not _DELETED]
                 self._rebuild_indices()
         else:
             # Key doesn't exist, add it
@@ -107,10 +117,10 @@ class MultiDict(MutableMultiMapping[K, V]):
         value = self._items[first_index][1]
 
         # Mark the first item for removal
-        self._items[first_index] = None
+        self._items[first_index] = _DELETED
 
-        # Filter out None items and rebuild indices
-        self._items = [item for item in self._items if item is not None]
+        # Filter out deleted items and rebuild indices
+        self._items = [item for item in self._items if item is not _DELETED]
         self._rebuild_indices()
 
         return value
@@ -126,10 +136,10 @@ class MultiDict(MutableMultiMapping[K, V]):
         # Mark items for removal
         indices_to_remove = self._key_indices[key]
         for idx in indices_to_remove:
-            self._items[idx] = None
+            self._items[idx] = _DELETED
 
-        # Filter out None items and rebuild indices
-        self._items = [item for item in self._items if item is not None]
+        # Filter out deleted items and rebuild indices
+        self._items = [item for item in self._items if item is not _DELETED]
         self._rebuild_indices()
 
     def __iter__(self) -> Iterator[K]:
