@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
+import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
 from typing import Generic, TypeVar, overload
 
 if sys.version_info >= (3, 9):
-    from collections.abc import Collection, Iterator
+    from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 else:
-    from typing import Collection, Iterator
+    from typing import Collection, Iterable, Iterator, Mapping, Sequence
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -72,17 +73,19 @@ class ValuesView(MultiMappingView):
         yield from (v for _, v in self._mapping.items())
 
 
+class _NoDefault:
+    pass
+
+
+_NO_DEFAULT = _NoDefault()
+
+
 class MultiMapping(Generic[K, V]):
     """Abstract base class for multi-mapping collections.
 
     A multi-mapping is a mapping that can hold multiple values for the same key.
     This class provides a read-only interface to such collections.
     """
-
-    class _NoDefault:
-        pass
-
-    _NO_DEFAULT = _NoDefault()
 
     @abstractmethod
     def _getall(self, key: K) -> list[V]:
@@ -124,7 +127,7 @@ class MultiMapping(Generic[K, V]):
         try:
             return self.getall(key)[0]
         except KeyError:
-            if default is self._NO_DEFAULT:
+            if default is _NO_DEFAULT:
                 raise
             return default  # ty: ignore[invalid-return-type]
 
@@ -149,14 +152,27 @@ class MultiMapping(Generic[K, V]):
         try:
             ret = self._getall(key)
         except KeyError:
-            if default is self._NO_DEFAULT:
+            if default is _NO_DEFAULT:
                 raise
             return default  # ty: ignore[invalid-return-type]
         if not ret:
-            if default is self._NO_DEFAULT:
+            if default is _NO_DEFAULT:
                 raise KeyError(key)
             return default  # ty: ignore[invalid-return-type]
         return ret
+
+    @overload
+    def get(self, key: K, default: D) -> V | D: ...
+
+    @overload
+    def get(self, key: K, default: None) -> V | None: ...
+
+    def get(self, key: K, default: D | None = None) -> V | D | None:
+        """Get the value for a key or return a default value."""
+        try:
+            return self[key]
+        except KeyError:
+            return default
 
     def keys(self) -> KeysView[K]:
         """Return a view of the keys in the MultiMapping."""
@@ -186,17 +202,139 @@ class MutableMultiMapping(MultiMapping[K, V]):
         raise NotImplementedError
 
     @abstractmethod
-    def __delitem__(self, key: K) -> None:
-        """Remove all values for a key.
-
-        Raises a `KeyError` if the key is not found.
-        """
-        raise NotImplementedError
-
-    @abstractmethod
     def add(self, key: K, value: V) -> None:
         """Add a value for a key.
 
         This should add the value without removing existing values for the key.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def _popone(self, key: K) -> V:
+        raise NotImplementedError
+
+    @overload
+    def popone(self, key: K) -> V: ...
+
+    @overload
+    def popone(self, key: K, default: D) -> V | D: ...
+
+    def popone(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> V | D:
+        """Remove and return the first value for a key.
+
+        Raises a `KeyError` if the key is not found and no default is provided.
+        """
+        try:
+            return self._popone(key)
+        except KeyError:
+            if default is _NO_DEFAULT:
+                raise
+            return default  # type: ignore[invalid-return-type]
+
+    @overload
+    def popall(self, key: K) -> list[V]: ...
+
+    @overload
+    def popall(self, key: K, default: D) -> list[V] | D: ...
+
+    def popall(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> list[V] | D:
+        """Remove and return all values for a key as a list.
+
+        Raises a `KeyError` if the key is not found and no default is provided.
+        """
+        try:
+            return [self.popone(key) for _ in range(len(self.getall(key)))]
+        except KeyError:
+            if default is _NO_DEFAULT:
+                raise
+            return default  # type: ignore[invalid-return-type]
+
+    @overload
+    def pop(self, key: K) -> V: ...
+
+    @overload
+    def pop(self, key: K, default: D) -> V | D: ...
+
+    def pop(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> V | D:
+        """Same as `popone`."""
+        if default is _NO_DEFAULT:
+            return self.popone(key)
+        return self.popone(key, default)
+
+    def popitem(self) -> tuple[K, V]:
+        """Remove and return a (key, value) pair."""
+        key = next(iter(self))
+        value = self.popone(key)
+        return key, value
+
+    def __delitem__(self, key: K) -> None:
+        """Remove all values for a key.
+
+        Raises a `KeyError` if the key is not found.
+        """
+        return self.popall(key)
+
+    @overload
+    def setdefault(self, key: K, default: D) -> V | D: ...
+
+    @overload
+    def setdefault(self, key: K, default: None) -> V | None: ...
+
+    def setdefault(self, key: K, default: D | None = None) -> V | D | None:
+        """Return the first value for a key if it exists, or set it to the default."""
+        try:
+            return self[key]
+        except KeyError:
+            self[key] = default
+            return default
+
+    def clear(self) -> None:
+        """Remove all items from the multi-mapping."""
+        for key in set(self.keys()):
+            self.popall(key)
+
+    def extend(
+        self,
+        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        **kwargs: V,
+    ) -> None:
+        """Extend the multi-mapping with items from another object."""
+        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = itertools.chain(items, kwargs.items())
+        for key, value in items:
+            self.add(key, value)
+
+    def merge(
+        self,
+        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        **kwargs: V,
+    ) -> None:
+        """Merge another object into the multi-mapping.
+
+        Keys from `other` that already exist in the multi-mapping will not be replaced.
+        """
+        existing_keys = set(self.keys())
+        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = itertools.chain(items, kwargs.items())
+        for key, value in items:
+            if key not in existing_keys:
+                self.add(key, value)
+
+    def update(
+        self,
+        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        **kwargs: V,
+    ) -> None:
+        """Update the multi-mapping with items from another object.
+
+        This replaces existing values for keys found in the other object.
+        """
+        existing_keys = set(self.keys())
+        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = itertools.chain(items, kwargs.items())
+        for key, value in items:
+            if key in existing_keys:
+                self[key] = value
+                existing_keys.remove(key)
+            else:
+                self.add(key, value)
