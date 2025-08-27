@@ -66,17 +66,12 @@ class ListMultiDict(MutableMultiMapping[K, V]):
     def add(self, key: K, value: V) -> None:
         self._items.append((key, value))
 
-    def __delitem__(self, key: K) -> None:
-        new_items = [(k, v) for k, v in self._items if k != key]
-        if len(new_items) == len(self._items):
-            raise KeyError(key)
-        self._items = new_items
-
-    def values(self) -> Iterable[V]:
-        return [v for _, v in self._items]
-
-    def items(self) -> Iterable[tuple[K, V]]:
-        return self._items
+    def _popone(self, key: K) -> V:
+        for i, (k, v) in enumerate(self._items):
+            if k == key:
+                del self._items[i]
+                return v
+        raise KeyError(key)
 
     def __iter__(self) -> Iterator[K]:
         return (k for k, _ in self._items)
