@@ -67,9 +67,13 @@ class ItemsView(MultiMappingView):
 
     def __iter__(self) -> Iterator[tuple[K, V]]:
         """Return an iterator over the items (key-value pairs)."""
+        # Optimize by avoiding repeated getall() calls per key
+        key_values_cache = {}
         counts = defaultdict(int)
         for k in self._mapping:
-            yield (k, self._mapping.getall(k)[counts[k]])
+            if k not in key_values_cache:
+                key_values_cache[k] = self._mapping.getall(k)
+            yield (k, key_values_cache[k][counts[k]])
             counts[k] += 1
 
 
@@ -78,7 +82,14 @@ class ValuesView(MultiMappingView):
 
     def __contains__(self, value: V) -> bool:
         """Check if the value is in the mapping."""
-        return value in iter(self)
+        # Optimize by checking each key's values directly instead of creating full iterator
+        seen_keys = set()
+        for key in self._mapping:
+            if key not in seen_keys:
+                seen_keys.add(key)
+                if value in self._mapping.getall(key):
+                    return True
+        return False
 
     def __iter__(self) -> Iterator[V]:
         """Return an iterator over the values."""
@@ -240,7 +251,11 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
         Raises a `KeyError` if the key is not found and no default is provided.
         """
         try:
-            return [self.popone(key) for _ in range(len(self.getall(key)))]
+            # Get all values first, then remove them efficiently
+            values = self.getall(key)
+            # Use __delitem__ to remove all values at once instead of repeated popone()
+            del self[key]
+            return values
         except KeyError:
             if default is _NO_DEFAULT:
                 raise
@@ -273,8 +288,17 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
     def clear(self) -> None:
         """Remove all items from the multi-mapping."""
-        for key in set(self.keys()):
-            self.popall(key)
+        # Collect unique keys first to avoid modification during iteration
+        unique_keys = []
+        seen = set()
+        for key in self:
+            if key not in seen:
+                unique_keys.append(key)
+                seen.add(key)
+        
+        # Remove all items for each unique key
+        for key in unique_keys:
+            del self[key]
 
     def extend(
         self,
@@ -296,11 +320,11 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
         Keys from `other` that already exist in the multi-mapping will not be replaced.
         """
-        existing_keys = set(self.keys())
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         for key, value in items:
-            if key not in existing_keys:
+            # Use __contains__ directly instead of creating a set of all keys
+            if key not in self:
                 self.add(key, value)
 
     def update(
@@ -312,12 +336,15 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
         This replaces existing values for keys found in the other object.
         """
-        existing_keys = set(self.keys())
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
+        # Track which keys we've already replaced to maintain correct behavior
+        replaced_keys = set()
         for key, value in items:
-            if key in existing_keys:
+            # If key exists and we haven't replaced it yet, replace it
+            if key in self and key not in replaced_keys:
                 self[key] = value
-                existing_keys.remove(key)
-            else:
+                replaced_keys.add(key)
+            # If key doesn't exist, or we've already replaced it, add the value
+            elif key not in self or key in replaced_keys:
                 self.add(key, value)
