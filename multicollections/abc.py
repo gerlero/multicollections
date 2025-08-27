@@ -4,14 +4,15 @@ from __future__ import annotations
 
 import itertools
 import sys
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 from collections import defaultdict
 from typing import Generic, TypeVar, overload
 
 if sys.version_info >= (3, 9):
-    from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import Collection, Iterable, Iterator, Mapping, MutableMapping, Sequence
 else:
     from typing import Collection, Iterable, Iterator, Mapping, Sequence
+    from collections.abc import MutableMapping
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -80,7 +81,7 @@ class _NoDefault:
 _NO_DEFAULT = _NoDefault()
 
 
-class MultiMapping(ABC, Generic[K, V]):
+class MultiMapping(Mapping[K, V], Generic[K, V]):
     """Abstract base class for multi-mapping collections.
 
     A multi-mapping is a mapping that can hold multiple values for the same key.
@@ -95,7 +96,6 @@ class MultiMapping(ABC, Generic[K, V]):
         """
         raise NotImplementedError  # pragma: no cover
 
-    @abstractmethod
     def __iter__(self) -> Iterator[K]:
         """Return an iterator over the keys.
 
@@ -103,7 +103,6 @@ class MultiMapping(ABC, Generic[K, V]):
         """
         raise NotImplementedError  # pragma: no cover
 
-    @abstractmethod
     def __len__(self) -> int:
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError  # pragma: no cover
@@ -189,13 +188,12 @@ class MultiMapping(ABC, Generic[K, V]):
         return ValuesView(self)
 
 
-class MutableMultiMapping(MultiMapping[K, V]):
+class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
     """Abstract base class for mutable multi-mapping collections.
 
     A mutable multi-mapping extends MultiMapping with methods to modify the collection.
     """
 
-    @abstractmethod
     def __setitem__(self, key: K, value: V) -> None:
         """Set the value for a key.
 
