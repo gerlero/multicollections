@@ -5,38 +5,28 @@ from __future__ import annotations
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TypeVar, overload
+from typing import Generic, TypeVar, overload
 
 if sys.version_info >= (3, 9):
-    from collections.abc import (
-        Iterator,
-        KeysView,
-        Mapping,
-        MappingView,
-        MutableMapping,
-        ValuesView,
-    )
+    from collections.abc import Collection, Iterator
 else:
-    from typing import (
-        Iterator,
-        KeysView,
-        Mapping,
-        MappingView,
-        MutableMapping,
-        ValuesView,
-    )
+    from typing import Collection, Iterator
 
 K = TypeVar("K")
 V = TypeVar("V")
 D = TypeVar("D")
 
 
-class MultiMappingView(MappingView):
+class MultiMappingView(Collection):
     """Base class for MultiMapping views."""
 
     def __init__(self, mapping: MultiMapping[K, V]) -> None:
         """Initialize the view with the given mapping."""
-        super().__init__(mapping)
+        self._mapping = mapping
+
+    def __len__(self) -> int:
+        """Return the number of items in the mapping."""
+        return len(self._mapping)
 
 
 class KeysView(MultiMappingView):
@@ -82,7 +72,7 @@ class ValuesView(MultiMappingView):
         yield from (v for _, v in self._mapping.items())
 
 
-class MultiMapping(Mapping[K, V]):
+class MultiMapping(Generic[K, V]):
     """Abstract base class for multi-mapping collections.
 
     A multi-mapping is a mapping that can hold multiple values for the same key.
@@ -111,6 +101,14 @@ class MultiMapping(Mapping[K, V]):
     def __len__(self) -> int:
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError
+
+    def __contains__(self, key: K) -> bool:
+        """Check if the key is present in the multi-mapping."""
+        try:
+            self[key]
+        except KeyError:
+            return False
+        return True
 
     @overload
     def getone(self, key: K) -> V: ...
@@ -173,7 +171,7 @@ class MultiMapping(Mapping[K, V]):
         return ValuesView(self)
 
 
-class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
+class MutableMultiMapping(MultiMapping[K, V]):
     """Abstract base class for mutable multi-mapping collections.
 
     A mutable multi-mapping extends MultiMapping with methods to modify the collection.
