@@ -16,9 +16,10 @@ A fully generic `MultiDict` class that allows multiple values for the same key w
 
 - **🔑 Multiple values per key**: Store multiple values for the same key, perfect for handling data like HTTP headers, form data, or configuration files
 - **📝 Insertion order preserved**: Maintains the order in which items were added
-- **🔄 Full compatibility**: Implements the standard `MutableMapping` interface
+- **🔄 Full compatibility**: Implements the `MutableMultiMapping` abstract base class with rich multi-value support
 - **⚡ Type-safe**: Fully typed with generics for excellent IDE support
 - **🪶 Lightweight**: Zero dependencies, pure Python implementation
+- **🎯 Rich API**: Includes `getall()`, `popall()`, `popone()`, `add()`, and more specialized methods
 
 ## 📦 Installation
 
@@ -54,6 +55,9 @@ headers = MultiDict([
 # Access the first value for a key
 print(headers['Accept'])  # 'text/html'
 
+# Get ALL values for a key
+print(headers.getall('Accept'))  # ['text/html', 'application/json']
+
 # See all key-value pairs (duplicates preserved)
 print(list(headers.items()))
 # [('Accept', 'text/html'), ('Accept-Encoding', 'gzip'), 
@@ -61,13 +65,64 @@ print(list(headers.items()))
 
 # Add more values for existing keys
 headers.add('Accept', 'text/xml')
+print(headers.getall('Accept'))  # ['text/html', 'application/json', 'text/xml']
 print(len(headers))  # 5 items total
+
+# Remove and return the first value
+first_accept = headers.popone('Accept')
+print(first_accept)  # 'text/html'
+print(headers.getall('Accept'))  # ['application/json', 'text/xml']
+
+# Remove and return all values for a key
+all_accepts = headers.popall('Accept')
+print(all_accepts)  # ['application/json', 'text/xml']
+print('Accept' in headers)  # False
 
 # Create from keyword arguments
 config = MultiDict(host='localhost', port=8080, debug=True)
 
 # Mix iterable and keyword arguments
 mixed = MultiDict([('a', 1), ('b', 2)], c=3, d=4)
+```
+
+## ⚡ Advanced Features
+
+`MultiDict` implements the `MutableMultiMapping` abstract base class, providing powerful methods for handling multiple values:
+
+```python
+from multicollections import MultiDict
+
+data = MultiDict([('tags', 'python'), ('tags', 'web'), ('category', 'tutorial')])
+
+# Get all values for a key
+all_tags = data.getall('tags')
+print(all_tags)  # ['python', 'web']
+
+# Safe get with default for missing keys
+missing_tags = data.getall('missing', default=[])
+print(missing_tags)  # []
+
+# Get one value with default
+lang = data.getone('language', default='unknown')
+print(lang)  # 'unknown'
+
+# Remove and return one value
+first_tag = data.popone('tags')
+print(first_tag)  # 'python'
+print(data.getall('tags'))  # ['web']
+
+# Remove and return all values
+remaining_tags = data.popall('tags')
+print(remaining_tags)  # ['web']
+
+# Extend with multiple items
+data.extend([('tags', 'api'), ('tags', 'flask')])
+print(data.getall('tags'))  # ['api', 'flask']
+
+# Update vs extend: update replaces, extend adds
+data.update([('category', 'advanced')])  # Replaces 'tutorial'
+data.extend([('category', 'guide')])     # Adds alongside 'advanced'
+print(data.getall('category'))  # ['advanced', 'guide']
 ```
 
 ## 📖 Why MultiDict?
