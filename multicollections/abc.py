@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import itertools
 import sys
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections import defaultdict
 from typing import Generic, TypeVar, overload
 
@@ -80,7 +80,7 @@ class _NoDefault:
 _NO_DEFAULT = _NoDefault()
 
 
-class MultiMapping(Generic[K, V]):
+class MultiMapping(ABC, Generic[K, V]):
     """Abstract base class for multi-mapping collections.
 
     A multi-mapping is a mapping that can hold multiple values for the same key.
