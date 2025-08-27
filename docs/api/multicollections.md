@@ -19,21 +19,16 @@ The main `multicollections` module provides the `MultiDict` class, a fully gener
 from multicollections import MultiDict
 
 # Create a MultiDict
-md = MultiDict([('a', 1), ('a', 2), ('b', 3)])
+md = MultiDict([('a', 1), ('b', 2), ('a', 3)])
 
 # Access first value for a key
 print(md['a'])  # 1
 
-# Get all values for a key
-print(md.getall('a'))  # [1, 2]
-
 # Add more values
-md.add('a', 3)
-print(md.getall('a'))  # [1, 2, 3]
+md.add('b', 4)
 
 # Set a single value (replaces all existing values)
 md['a'] = 999
-print(md.getall('a'))  # [999]
 
 # Iterate over all key-value pairs
 for key, value in md.items():
