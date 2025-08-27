@@ -7,54 +7,30 @@ from typing import TypeVar
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
-        ItemsView,
         Iterable,
         Iterator,
         Mapping,
-        MutableMapping,
         Sequence,
-        ValuesView,
     )
 else:
     from typing import (
-        ItemsView,
         Iterable,
         Iterator,
         Mapping,
-        MutableMapping,
         Sequence,
-        ValuesView,
     )
+
+from .abc import MutableMultiMapping
 
 K = TypeVar("K")
 V = TypeVar("V")
 
 
-class MultiDict(MutableMapping[K, V]):
+class MultiDict(MutableMultiMapping[K, V]):
     """A fully generic dictionary that allows multiple values with the same key.
 
     Preserves insertion order.
     """
-
-    class ValuesView(ValuesView[V]):  # noqa: D106
-        def __init__(self, mapping: MultiDict[K, V]) -> None:  # noqa: D107
-            super().__init__(mapping)
-
-        def __iter__(self) -> Iterator[V]:  # noqa: D105
-            return (v for _, v in self._mapping._items)  # noqa: SLF001
-
-        def __len__(self) -> int:  # noqa: D105
-            return len(self._mapping._items)  # noqa: SLF001
-
-    class ItemsView(ItemsView[K, V]):  # noqa: D106
-        def __init__(self, mapping: MultiDict[K, V]) -> None:  # noqa: D107
-            self._mapping = mapping
-
-        def __iter__(self) -> Iterator[tuple[K, V]]:  # noqa: D105
-            return iter(self._mapping._items)  # noqa: SLF001
-
-        def __len__(self) -> int:  # noqa: D105
-            return len(self._mapping._items)  # noqa: SLF001
 
     def __init__(
         self, iterable: Mapping[K, V] | Iterable[Sequence[K | V]] = (), **kwargs: V
@@ -79,15 +55,9 @@ class MultiDict(MutableMapping[K, V]):
             self._key_indices[key] = []
         self._key_indices[key].append(index)
 
-    def __getitem__(self, key: K) -> V:
-        """Get the first value for a key.
-
-        Raises a `KeyError` if the key is not found.
-        """
-        if key not in self._key_indices:
-            raise KeyError(key)
-        first_index = self._key_indices[key][0]
-        return self._items[first_index][1]
+    def _getall(self, key: K) -> list[V]:
+        """Get all values for a key."""
+        return [self._items[i][1] for i in self._key_indices.get(key, [])]
 
     def __setitem__(self, key: K, value: V) -> None:
         """Set the value for a key.
@@ -127,6 +97,24 @@ class MultiDict(MutableMapping[K, V]):
         """Add a value for a key."""
         self._add_item(key, value)
 
+    def _popone(self, key: K) -> V:
+        """Remove and return the first value for a key."""
+        if key not in self._key_indices:
+            raise KeyError(key)
+
+        indices = self._key_indices[key]
+        first_index = indices[0]
+        value = self._items[first_index][1]
+
+        # Mark the first item for removal
+        self._items[first_index] = None
+
+        # Filter out None items and rebuild indices
+        self._items = [item for item in self._items if item is not None]
+        self._rebuild_indices()
+
+        return value
+
     def __delitem__(self, key: K) -> None:
         """Remove all values for a key.
 
@@ -151,14 +139,10 @@ class MultiDict(MutableMapping[K, V]):
         """
         return (k for k, _ in self._items)
 
-    def values(self) -> ValuesView[V]:
-        """Return a view of the values in the MultiDict."""
-        return self.ValuesView(self)
-
-    def items(self) -> ItemsView[K, V]:
-        """Return a view of the items in the MultiDict."""
-        return self.ItemsView(self)
-
     def __len__(self) -> int:
         """Return the total number of items."""
         return len(self._items)
+
+    def __repr__(self) -> str:
+        """Return a string representation of the MultiDict."""
+        return f"{self.__class__.__name__}({list(self._items)!r})"

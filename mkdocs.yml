@@ -23,4 +23,7 @@ plugins:
                     inherited_members: true
 
 nav:
-    - 'index.md'
+    - Home: 'index.md'
+    - API Reference:
+        - MultiDict: 'api/multicollections.md'
+        - Abstract Base Classes: 'api/abc.md'
