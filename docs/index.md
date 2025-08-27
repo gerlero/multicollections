@@ -28,12 +28,8 @@ md = MultiDict([('fruit', 'apple'), ('fruit', 'banana'), ('color', 'red')])
 # Access the first value
 print(md['fruit'])  # 'apple'
 
-# Get all values for a key
-print(md.getall('fruit'))  # ['apple', 'banana']
-
 # Add more values
 md.add('fruit', 'orange')
-print(md.getall('fruit'))  # ['apple', 'banana', 'orange']
 ```
 
 ## Documentation
