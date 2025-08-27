@@ -97,6 +97,24 @@ class MultiDict(MutableMultiMapping[K, V]):
         """Add a value for a key."""
         self._add_item(key, value)
 
+    def _popone(self, key: K) -> V:
+        """Remove and return the first value for a key."""
+        if key not in self._key_indices:
+            raise KeyError(key)
+
+        indices = self._key_indices[key]
+        first_index = indices[0]
+        value = self._items[first_index][1]
+
+        # Mark the first item for removal
+        self._items[first_index] = None
+
+        # Filter out None items and rebuild indices
+        self._items = [item for item in self._items if item is not None]
+        self._rebuild_indices()
+
+        return value
+
     def __delitem__(self, key: K) -> None:
         """Remove all values for a key.
 
