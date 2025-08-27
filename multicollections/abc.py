@@ -9,10 +9,16 @@ from collections import defaultdict
 from typing import Generic, TypeVar, overload
 
 if sys.version_info >= (3, 9):
-    from collections.abc import Collection, Iterable, Iterator, Mapping, MutableMapping, Sequence
+    from collections.abc import (
+        Collection,
+        Iterable,
+        Iterator,
+        Mapping,
+        MutableMapping,
+        Sequence,
+    )
 else:
-    from typing import Collection, Iterable, Iterator, Mapping, Sequence
-    from collections.abc import MutableMapping
+    from typing import Collection, Iterable, Iterator, Mapping, MutableMapping, Sequence
 
 K = TypeVar("K")
 V = TypeVar("V")
