@@ -269,7 +269,7 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
         Raises a `KeyError` if the key is not found.
         """
-        return self.popall(key)
+        self.popall(key)
 
     def clear(self) -> None:
         """Remove all items from the multi-mapping."""
