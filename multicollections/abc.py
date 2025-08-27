@@ -273,18 +273,18 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
     def extend(
         self,
-        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        other: Mapping[K, V] | Iterable[Sequence[K | V]] = (),
         **kwargs: V,
     ) -> None:
         """Extend the multi-mapping with items from another object."""
-        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         for key, value in items:
             self.add(key, value)
 
     def merge(
         self,
-        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        other: Mapping[K, V] | Iterable[Sequence[K | V]] = (),
         **kwargs: V,
     ) -> None:
         """Merge another object into the multi-mapping.
@@ -292,7 +292,7 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
         Keys from `other` that already exist in the multi-mapping will not be replaced.
         """
         existing_keys = set(self.keys())
-        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         for key, value in items:
             if key not in existing_keys:
@@ -300,7 +300,7 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
     def update(
         self,
-        other: MultiMapping[K, V] | Mapping[K, V] | Iterable[Sequence[K | V]] = (),
+        other: Mapping[K, V] | Iterable[Sequence[K | V]] = (),
         **kwargs: V,
     ) -> None:
         """Update the multi-mapping with items from another object.
@@ -308,7 +308,7 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
         This replaces existing values for keys found in the other object.
         """
         existing_keys = set(self.keys())
-        items = other.items() if isinstance(other, (MultiMapping, Mapping)) else other
+        items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         for key, value in items:
             if key in existing_keys:
