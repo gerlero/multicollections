@@ -153,7 +153,12 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
-        return MultiDict(self._items)
+        # Create new instance without calling __init__ to avoid rebuilding indices
+        new_md = MultiDict.__new__(MultiDict)
+        new_md._items = self._items.copy()  # Shallow copy of items list
+        # Copy the index structure directly instead of rebuilding it
+        new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}
+        return new_md
 
     def __repr__(self) -> str:
         """Return a string representation of the MultiDict."""
