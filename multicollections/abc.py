@@ -33,6 +33,8 @@ else:
         Sequence,
     )
 
+from ._util import override
+
 _K = TypeVar("_K")
 _V = TypeVar("_V")
 _D = TypeVar("_D")
@@ -41,6 +43,7 @@ _D = TypeVar("_D")
 class MultiMappingView(MappingView, Collection):
     """Base class for MultiMapping views."""
 
+    @override
     def __init__(self, mapping: MultiMapping[_K, _V]) -> None:
         """Initialize the view with the given mapping."""
         super().__init__(mapping)
@@ -49,10 +52,12 @@ class MultiMappingView(MappingView, Collection):
 class KeysView(MultiMappingView):
     """View for the keys in a MultiMapping."""
 
+    @override
     def __contains__(self, key: _K) -> bool:
         """Check if the key is in the mapping."""
         return key in self._mapping
 
+    @override
     def __iter__(self) -> Iterator[_K]:
         """Return an iterator over the keys."""
         return iter(self._mapping)
@@ -61,6 +66,7 @@ class KeysView(MultiMappingView):
 class ItemsView(MultiMappingView):
     """View for the items (key-value pairs) in a MultiMapping."""
 
+    @override
     def __contains__(self, item: tuple[_K, _V]) -> bool:
         """Check if the item is in the mapping."""
         key, value = item
@@ -69,6 +75,7 @@ class ItemsView(MultiMappingView):
         except KeyError:
             return False
 
+    @override
     def __iter__(self) -> Iterator[tuple[_K, _V]]:
         """Return an iterator over the items (key-value pairs)."""
         counts = defaultdict(int)
@@ -80,10 +87,12 @@ class ItemsView(MultiMappingView):
 class ValuesView(MultiMappingView):
     """View for the values in a MultiMapping."""
 
+    @override
     def __contains__(self, value: _V) -> bool:
         """Check if the value is in the mapping."""
         return value in iter(self)
 
+    @override
     def __iter__(self) -> Iterator[_V]:
         """Return an iterator over the values."""
         yield from (v for _, v in self._mapping.items())
@@ -152,6 +161,7 @@ class MultiMapping(Mapping[_K, _V], Generic[_K, _V]):
         """
         return self.getall(key)[0]
 
+    @override
     def __getitem__(self, key: _K) -> _V:
         """Get the first value for a key.
 
@@ -159,14 +169,17 @@ class MultiMapping(Mapping[_K, _V], Generic[_K, _V]):
         """
         return self.getone(key)
 
+    @override
     def keys(self) -> KeysView[_K]:
         """Return a view of the keys in the MultiMapping."""
         return KeysView(self)
 
+    @override
     def items(self) -> ItemsView[_K, _V]:
         """Return a view of the items (key-value pairs) in the MultiMapping."""
         return ItemsView(self)
 
+    @override
     def values(self) -> ValuesView[_V]:
         """Return a view of the values in the MultiMapping."""
         return ValuesView(self)
@@ -226,6 +239,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         value = self.popone(key)
         return key, value
 
+    @override
     def __delitem__(self, key: _K) -> None:
         """Remove all values for a key.
 
@@ -233,11 +247,13 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         """
         self.popall(key)
 
+    @override
     def clear(self) -> None:
         """Remove all items from the multi-mapping."""
         for key in set(self.keys()):
             self.popall(key)
 
+    @override
     def extend(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -249,6 +265,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         for key, value in items:
             self.add(key, value)
 
+    @override
     def merge(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -265,6 +282,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
             if key not in existing_keys:
                 self.add(key, value)
 
+    @override
     def update(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),

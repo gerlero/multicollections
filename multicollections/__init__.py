@@ -21,6 +21,7 @@ else:
         Sequence,
     )
 
+from ._util import override
 from .abc import MutableMultiMapping, with_default
 
 _K = TypeVar("_K")
@@ -53,6 +54,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         if self._items:
             self._rebuild_indices()
 
+    @override
     @with_default
     def getall(self, key: _K) -> list[_V]:
         """Get all values for a key.
@@ -64,6 +66,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             raise KeyError(key)
         return ret
 
+    @override
     def __setitem__(self, key: _K, value: _V) -> None:
         """Set the value for a key.
 
@@ -98,6 +101,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
                 self._key_indices[key] = []
             self._key_indices[key].append(i)
 
+    @override
     def add(self, key: _K, value: _V) -> None:
         """Add a new value for a key."""
         index = len(self._items)
@@ -106,6 +110,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             self._key_indices[key] = []
         self._key_indices[key].append(index)
 
+    @override
     @with_default
     def popone(self, key: _K) -> _V:
         """Remove and return the first value for a key."""
@@ -125,6 +130,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         return value
 
+    @override
     def __delitem__(self, key: _K) -> None:
         """Remove all values for a key.
 
@@ -142,6 +148,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         self._items = [item for item in self._items if item is not None]
         self._rebuild_indices()
 
+    @override
     def __iter__(self) -> Iterator[_K]:
         """Return an iterator over the keys, in insertion order.
 
@@ -149,10 +156,12 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """
         return (k for k, _ in self._items)
 
+    @override
     def __len__(self) -> int:
         """Return the total number of items."""
         return len(self._items)
 
+    @override
     def clear(self) -> None:
         """Remove all items from the multi-mapping."""
         self._items.clear()
@@ -196,6 +205,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             for value in values:
                 self._items.append((key, value))
 
+    @override
     def update(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -232,6 +242,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         if updates_by_key or additions:
             self._rebuild_indices()
 
+    @override
     def merge(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -263,6 +274,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
                 self._key_indices[key] = []
             self._key_indices[key].append(i)
 
+    @override
     def extend(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),

@@ -18,6 +18,7 @@ else:
         Sequence,
     )
 
+from multicollections._util import override
 from multicollections.abc import MutableMultiMapping, with_default
 
 _K = TypeVar("_K")
@@ -38,6 +39,7 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
         for key, value in kwargs.items():
             self._items.append((key, value))
 
+    @override
     @with_default
     def getall(self, key: _K) -> list[_V]:
         ret = [v for k, v in self._items if k == key]
@@ -45,6 +47,7 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
             raise KeyError(key)
         return ret
 
+    @override
     def __setitem__(self, key: _K, value: _V) -> None:
         replaced: int | None = None
         for i, (k, _) in enumerate(self._items):
@@ -62,9 +65,11 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
         else:
             self._items.append((key, value))
 
+    @override
     def add(self, key: _K, value: _V) -> None:
         self._items.append((key, value))
 
+    @override
     @with_default
     def popone(self, key: _K) -> _V:
         for i, (k, v) in enumerate(self._items):
@@ -73,8 +78,10 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
                 return v
         raise KeyError(key)
 
+    @override
     def __iter__(self) -> Iterator[_K]:
         return (k for k, _ in self._items)
 
+    @override
     def __len__(self) -> int:
         return len(self._items)
