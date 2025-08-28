@@ -22,22 +22,22 @@ else:
 
 from .abc import MutableMultiMapping, with_default
 
-K = TypeVar("K")
-V = TypeVar("V")
+_K = TypeVar("_K")
+_V = TypeVar("_V")
 
 
-class MultiDict(MutableMultiMapping[K, V]):
+class MultiDict(MutableMultiMapping[_K, _V]):
     """A fully generic dictionary that allows multiple values with the same key.
 
     Preserves insertion order.
     """
 
     def __init__(
-        self, iterable: Mapping[K, V] | Iterable[Sequence[K | V]] = (), **kwargs: V
+        self, iterable: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (), **kwargs: _V
     ) -> None:
         """Create a MultiDict."""
-        self._items: list[tuple[K, V]] = []
-        self._key_indices: dict[K, list[int]] = {}
+        self._items: list[tuple[_K, _V]] = []
+        self._key_indices: dict[_K, list[int]] = {}
         if isinstance(iterable, Mapping):
             for key, value in iterable.items():
                 self._add_item(key, value)
@@ -47,7 +47,7 @@ class MultiDict(MutableMultiMapping[K, V]):
         for key, value in kwargs.items():
             self._add_item(key, value)
 
-    def _add_item(self, key: K, value: V) -> None:
+    def _add_item(self, key: _K, value: _V) -> None:
         """Add an item and update the key index."""
         index = len(self._items)
         self._items.append((key, value))
@@ -56,7 +56,7 @@ class MultiDict(MutableMultiMapping[K, V]):
         self._key_indices[key].append(index)
 
     @with_default
-    def getall(self, key: K) -> list[V]:
+    def getall(self, key: _K) -> list[_V]:
         """Get all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -66,7 +66,7 @@ class MultiDict(MutableMultiMapping[K, V]):
             raise KeyError(key)
         return ret
 
-    def __setitem__(self, key: K, value: V) -> None:
+    def __setitem__(self, key: _K, value: _V) -> None:
         """Set the value for a key.
 
         Replaces the first value for a key if it exists; otherwise, it adds a new item.
@@ -100,12 +100,12 @@ class MultiDict(MutableMultiMapping[K, V]):
                 self._key_indices[key] = []
             self._key_indices[key].append(i)
 
-    def add(self, key: K, value: V) -> None:
+    def add(self, key: _K, value: _V) -> None:
         """Add a new value for a key."""
         self._add_item(key, value)
 
     @with_default
-    def popone(self, key: K) -> V:
+    def popone(self, key: _K) -> _V:
         """Remove and return the first value for a key."""
         if key not in self._key_indices:
             raise KeyError(key)
@@ -123,7 +123,7 @@ class MultiDict(MutableMultiMapping[K, V]):
 
         return value
 
-    def __delitem__(self, key: K) -> None:
+    def __delitem__(self, key: _K) -> None:
         """Remove all values for a key.
 
         Raises a `KeyError` if the key is not found.
@@ -140,7 +140,7 @@ class MultiDict(MutableMultiMapping[K, V]):
         self._items = [item for item in self._items if item is not None]
         self._rebuild_indices()
 
-    def __iter__(self) -> Iterator[K]:
+    def __iter__(self) -> Iterator[_K]:
         """Return an iterator over the keys, in insertion order.
 
         Keys with multiple values will be yielded multiple times.

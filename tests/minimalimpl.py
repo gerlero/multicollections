@@ -20,15 +20,15 @@ else:
 
 from multicollections.abc import MutableMultiMapping, with_default
 
-K = TypeVar("K")
-V = TypeVar("V")
+_K = TypeVar("_K")
+_V = TypeVar("_V")
 
 
-class ListMultiDict(MutableMultiMapping[K, V]):
+class ListMultiDict(MutableMultiMapping[_K, _V]):
     def __init__(
-        self, iterable: Mapping[K, V] | Iterable[Sequence[K | V]] = (), **kwargs: V
+        self, iterable: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (), **kwargs: _V
     ) -> None:
-        self._items: list[tuple[K, V]] = []
+        self._items: list[tuple[_K, _V]] = []
         if isinstance(iterable, Mapping):
             for key, value in iterable.items():
                 self._items.append((key, value))
@@ -39,13 +39,13 @@ class ListMultiDict(MutableMultiMapping[K, V]):
             self._items.append((key, value))
 
     @with_default
-    def getall(self, key: K) -> list[V]:
+    def getall(self, key: _K) -> list[_V]:
         ret = [v for k, v in self._items if k == key]
         if not ret:
             raise KeyError(key)
         return ret
 
-    def __setitem__(self, key: K, value: V) -> None:
+    def __setitem__(self, key: _K, value: _V) -> None:
         replaced: int | None = None
         for i, (k, _) in enumerate(self._items):
             if k == key:
@@ -62,18 +62,18 @@ class ListMultiDict(MutableMultiMapping[K, V]):
         else:
             self._items.append((key, value))
 
-    def add(self, key: K, value: V) -> None:
+    def add(self, key: _K, value: _V) -> None:
         self._items.append((key, value))
 
     @with_default
-    def popone(self, key: K) -> V:
+    def popone(self, key: _K) -> _V:
         for i, (k, v) in enumerate(self._items):
             if k == key:
                 del self._items[i]
                 return v
         raise KeyError(key)
 
-    def __iter__(self) -> Iterator[K]:
+    def __iter__(self) -> Iterator[_K]:
         return (k for k, _ in self._items)
 
     def __len__(self) -> int:
