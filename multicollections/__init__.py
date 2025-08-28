@@ -38,16 +38,16 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """Create a MultiDict."""
         self._items: list[tuple[_K, _V]] = []
         self._key_indices: dict[_K, list[int]] = {}
-        
+
         # Batch initialization: collect all items first, then build indices once
         if isinstance(iterable, Mapping):
             self._items.extend((key, value) for key, value in iterable.items())
         else:
             self._items.extend((key, value) for key, value in iterable)
-        
+
         # Add kwargs items
         self._items.extend((key, value) for key, value in kwargs.items())
-        
+
         # Build indices in one pass for better performance
         if self._items:
             self._rebuild_indices()
