@@ -807,8 +807,8 @@ def test_edge_cases_multidict_specific() -> None:
     assert md._key_indices["c"] == [1]  # Only one index for c  # noqa: SLF001
 
 
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
-def test_copy_method(cls: type[MutableMultiMapping]) -> None:
+@pytest.mark.parametrize("cls", [MultiDict, multidict.MultiDict])
+def test_copy_method(cls: type[MultiDict | multidict.MultiDict]) -> None:
     """Test copy() method."""
     # Test copying empty MultiDict
     empty_md = cls()

@@ -153,7 +153,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
-        return self.__class__(self._items)
+        return MultiDict(self._items)
 
     def __repr__(self) -> str:
         """Return a string representation of the MultiDict."""
