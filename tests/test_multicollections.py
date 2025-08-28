@@ -878,7 +878,7 @@ def test_update_with_empty_input() -> None:
     md.update()  # Empty input
     assert len(md) == 1
     assert md["a"] == 1
-    
+
     md.update([])  # Empty list
     assert len(md) == 1
     assert md["a"] == 1
@@ -891,7 +891,7 @@ def test_merge_with_empty_input() -> None:
     md.merge()  # Empty input
     assert len(md) == 1
     assert md["a"] == 1
-    
+
     md.merge([])  # Empty list
     assert len(md) == 1
     assert md["a"] == 1
@@ -904,7 +904,7 @@ def test_extend_with_empty_input() -> None:
     md.extend()  # Empty input
     assert len(md) == 1
     assert md["a"] == 1
-    
+
     md.extend([])  # Empty list
     assert len(md) == 1
     assert md["a"] == 1
@@ -926,7 +926,7 @@ def test_merge_existing_key_in_indices() -> None:
     md = MultiDict([("a", 1)])
     existing_keys = set(md._key_indices.keys())  # noqa: SLF001
     assert "a" in existing_keys
-    
+
     # Since merge filters out existing keys, we test the else branch
     # by adding a new key
     md.merge([("b", 2)])
@@ -938,7 +938,7 @@ def test_extend_existing_key_in_indices() -> None:
     """Test extend with key that already exists in indices."""
     # This tests line 290-291: if key not in self._key_indices
     md = MultiDict([("a", 1)])
-    
+
     # Extend with existing key - should add to existing key's index list
     md.extend([("a", 2)])
     assert len(md._key_indices["a"]) == 2  # noqa: SLF001
@@ -950,7 +950,7 @@ def test_update_only_updates_no_additions() -> None:
     # This tests line 228-229: if additions: branch when additions is empty
     md = MultiDict([("a", 1), ("b", 2)])
     md.update([("a", 999), ("b", 888)])  # Only existing keys
-    
+
     assert len(md) == 2
     assert md["a"] == 999
     assert md["b"] == 888
@@ -961,7 +961,7 @@ def test_update_only_additions_no_updates() -> None:
     # This tests line 224-225: if updates_by_key: branch when updates_by_key is empty
     md = MultiDict([("a", 1)])
     md.update([("b", 2), ("c", 3)])  # Only new keys
-    
+
     assert len(md) == 3
     assert md["a"] == 1  # Original unchanged
     assert md["b"] == 2
@@ -979,19 +979,19 @@ def test_init_with_no_items_and_no_kwargs() -> None:
 def test_collect_update_items_edge_cases() -> None:
     """Test _collect_update_items helper method edge cases."""
     md = MultiDict([("a", 1)])
-    
+
     # Test with empty all_items
-    updates, additions = md._collect_update_items([], set())
+    updates, additions = md._collect_update_items([], set())  # noqa: SLF001
     assert updates == {}
     assert additions == []
-    
+
     # Test with all new keys
-    updates, additions = md._collect_update_items([("b", 2), ("c", 3)], set())
+    updates, additions = md._collect_update_items([("b", 2), ("c", 3)], set())  # noqa: SLF001
     assert updates == {}
     assert additions == [("b", 2), ("c", 3)]
-    
+
     # Test with all existing keys
-    updates, additions = md._collect_update_items([("a", 999)], {"a"})
+    updates, additions = md._collect_update_items([("a", 999)], {"a"})  # noqa: SLF001
     assert updates == {"a": [999]}
     assert additions == []
 
@@ -1000,14 +1000,14 @@ def test_process_updates_edge_cases() -> None:
     """Test _process_updates helper method edge cases."""
     md = MultiDict([("a", 1), ("b", 2), ("a", 3)])
     original_len = len(md)
-    
+
     # Test with empty updates
-    md._process_updates({})
+    md._process_updates({})  # noqa: SLF001
     assert len(md) == original_len  # Should remain unchanged
-    
+
     # Test with single key update - need to rebuild indices after _process_updates
     md = MultiDict([("a", 1), ("b", 2), ("a", 3)])
-    md._process_updates({"a": [999]})
-    md._rebuild_indices()  # _process_updates doesn't rebuild indices
+    md._process_updates({"a": [999]})  # noqa: SLF001
+    md._rebuild_indices()  # _process_updates doesn't rebuild indices  # noqa: SLF001
     assert md["a"] == 999
     assert md["b"] == 2
