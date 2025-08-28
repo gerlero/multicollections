@@ -1,7 +1,18 @@
 from __future__ import annotations
 
 import sys
-from typing import TypeVar
+from typing import Callable, TypeVar
+
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
+    try:
+        from typing_extensions import override
+    except ImportError:
+        # Fallback for environments without typing_extensions
+        def override(func: Callable) -> Callable:
+            """Fallback override decorator that does nothing."""
+            return func
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -38,6 +49,7 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
         for key, value in kwargs.items():
             self._items.append((key, value))
 
+    @override
     @with_default
     def getall(self, key: _K) -> list[_V]:
         ret = [v for k, v in self._items if k == key]
@@ -45,6 +57,7 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
             raise KeyError(key)
         return ret
 
+    @override
     def __setitem__(self, key: _K, value: _V) -> None:
         replaced: int | None = None
         for i, (k, _) in enumerate(self._items):
@@ -62,9 +75,11 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
         else:
             self._items.append((key, value))
 
+    @override
     def add(self, key: _K, value: _V) -> None:
         self._items.append((key, value))
 
+    @override
     @with_default
     def popone(self, key: _K) -> _V:
         for i, (k, v) in enumerate(self._items):
@@ -73,8 +88,10 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
                 return v
         raise KeyError(key)
 
+    @override
     def __iter__(self) -> Iterator[_K]:
         return (k for k, _ in self._items)
 
+    @override
     def __len__(self) -> int:
         return len(self._items)
