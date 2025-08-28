@@ -21,6 +21,7 @@ else:
             """Fallback override decorator that does nothing."""
             return func
 
+
 if sys.version_info >= (3, 9):
     from collections.abc import (
         Callable,
