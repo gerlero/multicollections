@@ -157,6 +157,132 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         self._items.clear()
         self._key_indices.clear()
 
+    def update(
+        self,
+        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        **kwargs: _V,
+    ) -> None:
+        """Update the multi-mapping with items from another object.
+
+        This replaces existing values for keys found in the other object.
+        This is optimized for batch operations.
+        """
+        import itertools
+        
+        # Collect all items first
+        items = other.items() if isinstance(other, Mapping) else other
+        items = itertools.chain(items, kwargs.items())
+        all_items = list(items)
+        
+        if not all_items:
+            return
+            
+        # Get existing keys once for efficiency
+        existing_keys = set(self._key_indices.keys())
+        
+        # Separate items into updates and additions
+        # For updates, we need to keep ALL values, not just the last one
+        updates_by_key = {}  # key -> list of values to replace with
+        additions = []  # list of (key, value) for new keys
+        
+        for key, value in all_items:
+            if key in existing_keys:
+                if key not in updates_by_key:
+                    updates_by_key[key] = []
+                updates_by_key[key].append(value)
+            else:
+                additions.append((key, value))
+        
+        # Process updates efficiently
+        if updates_by_key:
+            # Mark items for removal that need to be replaced
+            items_to_remove = set()
+            for key in updates_by_key:
+                items_to_remove.update(self._key_indices[key])
+            
+            # Mark items for removal
+            for idx in items_to_remove:
+                self._items[idx] = None
+            
+            # Filter out None items
+            self._items = [item for item in self._items if item is not None]
+            
+            # Add updated items (all values for each key)
+            for key, values in updates_by_key.items():
+                for value in values:
+                    self._items.append((key, value))
+        
+        # Add new items
+        if additions:
+            self._items.extend(additions)
+        
+        # Rebuild indices once at the end
+        if updates_by_key or additions:
+            self._rebuild_indices()
+
+    def merge(
+        self,
+        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        **kwargs: _V,
+    ) -> None:
+        """Merge another object into the multi-mapping.
+
+        Keys from `other` that already exist in the multi-mapping will not be added.
+        This is optimized for batch operations.
+        """
+        import itertools
+        
+        # Get existing keys once for efficiency
+        existing_keys = set(self._key_indices.keys())
+        
+        # Collect all items and filter out existing keys
+        items = other.items() if isinstance(other, Mapping) else other
+        items = itertools.chain(items, kwargs.items())
+        new_items = [(key, value) for key, value in items if key not in existing_keys]
+        
+        if not new_items:
+            return
+            
+        # Add all items to the list at once
+        start_index = len(self._items)
+        self._items.extend(new_items)
+        
+        # Update indices incrementally for better performance
+        for i, (key, _) in enumerate(new_items, start_index):
+            if key not in self._key_indices:
+                self._key_indices[key] = []
+            self._key_indices[key].append(i)
+
+    def extend(
+        self,
+        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        **kwargs: _V,
+    ) -> None:
+        """Extend the multi-mapping with items from another object.
+        
+        This is optimized for batch operations to avoid rebuilding indices 
+        multiple times.
+        """
+        import itertools
+        
+        # Collect all new items first
+        items = other.items() if isinstance(other, Mapping) else other
+        items = itertools.chain(items, kwargs.items())
+        new_items = list(items)
+        
+        if not new_items:
+            return
+            
+        # Add all items to the list at once
+        start_index = len(self._items)
+        self._items.extend(new_items)
+        
+        # Update indices incrementally for better performance
+        for i, (key, _) in enumerate(new_items, start_index):
+            if key not in self._key_indices:
+                self._key_indices[key] = []
+            self._key_indices[key].append(i)
+
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
         new_md = MultiDict.__new__(MultiDict)
