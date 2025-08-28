@@ -158,6 +158,44 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         self._items.clear()
         self._key_indices.clear()
 
+    def _collect_update_items(
+        self,
+        all_items: list[tuple[_K, _V]],
+        existing_keys: set[_K],
+    ) -> tuple[dict[_K, list[_V]], list[tuple[_K, _V]]]:
+        """Separate items into updates and additions."""
+        updates_by_key = {}  # key -> list of values to replace with
+        additions = []  # list of (key, value) for new keys
+
+        for key, value in all_items:
+            if key in existing_keys:
+                if key not in updates_by_key:
+                    updates_by_key[key] = []
+                updates_by_key[key].append(value)
+            else:
+                additions.append((key, value))
+
+        return updates_by_key, additions
+
+    def _process_updates(self, updates_by_key: dict[_K, list[_V]]) -> None:
+        """Process updates efficiently by batch removing and adding."""
+        # Mark items for removal that need to be replaced
+        items_to_remove = set()
+        for key in updates_by_key:
+            items_to_remove.update(self._key_indices[key])
+
+        # Mark items for removal
+        for idx in items_to_remove:
+            self._items[idx] = None
+
+        # Filter out None items
+        self._items = [item for item in self._items if item is not None]
+
+        # Add updated items (all values for each key)
+        for key, values in updates_by_key.items():
+            for value in values:
+                self._items.append((key, value))
+
     def update(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -172,49 +210,24 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         all_items = list(items)
-        
+
         if not all_items:
             return
-            
+
         # Get existing keys once for efficiency
         existing_keys = set(self._key_indices.keys())
-        
+
         # Separate items into updates and additions
-        # For updates, we need to keep ALL values, not just the last one
-        updates_by_key = {}  # key -> list of values to replace with
-        additions = []  # list of (key, value) for new keys
-        
-        for key, value in all_items:
-            if key in existing_keys:
-                if key not in updates_by_key:
-                    updates_by_key[key] = []
-                updates_by_key[key].append(value)
-            else:
-                additions.append((key, value))
-        
+        updates_by_key, additions = self._collect_update_items(all_items, existing_keys)
+
         # Process updates efficiently
         if updates_by_key:
-            # Mark items for removal that need to be replaced
-            items_to_remove = set()
-            for key in updates_by_key:
-                items_to_remove.update(self._key_indices[key])
-            
-            # Mark items for removal
-            for idx in items_to_remove:
-                self._items[idx] = None
-            
-            # Filter out None items
-            self._items = [item for item in self._items if item is not None]
-            
-            # Add updated items (all values for each key)
-            for key, values in updates_by_key.items():
-                for value in values:
-                    self._items.append((key, value))
-        
+            self._process_updates(updates_by_key)
+
         # Add new items
         if additions:
             self._items.extend(additions)
-        
+
         # Rebuild indices once at the end
         if updates_by_key or additions:
             self._rebuild_indices()
@@ -231,19 +244,19 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """
         # Get existing keys once for efficiency
         existing_keys = set(self._key_indices.keys())
-        
+
         # Collect all items and filter out existing keys
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         new_items = [(key, value) for key, value in items if key not in existing_keys]
-        
+
         if not new_items:
             return
-            
+
         # Add all items to the list at once
         start_index = len(self._items)
         self._items.extend(new_items)
-        
+
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
             if key not in self._key_indices:
@@ -256,22 +269,22 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         **kwargs: _V,
     ) -> None:
         """Extend the multi-mapping with items from another object.
-        
-        This is optimized for batch operations to avoid rebuilding indices 
+
+        This is optimized for batch operations to avoid rebuilding indices
         multiple times.
         """
         # Collect all new items first
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
         new_items = list(items)
-        
+
         if not new_items:
             return
-            
+
         # Add all items to the list at once
         start_index = len(self._items)
         self._items.extend(new_items)
-        
+
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
             if key not in self._key_indices:
