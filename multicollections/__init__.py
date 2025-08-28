@@ -158,7 +158,10 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
-        return MultiDict(self._items)
+        new_md = MultiDict.__new__(MultiDict)
+        new_md._items = self._items.copy()  # noqa: SLF001
+        new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}  # noqa: SLF001
+        return new_md
 
     def __repr__(self) -> str:
         """Return a string representation of the MultiDict."""
