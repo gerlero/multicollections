@@ -805,3 +805,58 @@ def test_edge_cases_multidict_specific() -> None:
 
     assert len(md._items) == 2  # b and c  # noqa: SLF001
     assert md._key_indices["c"] == [1]  # Only one index for c  # noqa: SLF001
+
+
+@pytest.mark.parametrize("cls", [MultiDict, multidict.MultiDict])
+def test_copy_method(cls: type[MultiDict | multidict.MultiDict]) -> None:
+    """Test copy() method."""
+    # Test copying empty MultiDict
+    empty_md = cls()
+    empty_copy = empty_md.copy()
+    assert len(empty_copy) == 0
+    assert list(empty_copy.items()) == []
+    assert empty_md is not empty_copy  # Different objects
+
+    # Test copying MultiDict with single item
+    single_md = cls([("a", 1)])  # ty: ignore [too-many-positional-arguments]
+    single_copy = single_md.copy()
+    assert len(single_copy) == 1
+    assert list(single_copy.items()) == [("a", 1)]
+    assert single_md is not single_copy  # Different objects
+
+    # Test copying MultiDict with multiple items including duplicates
+    md = cls([("a", 1), ("b", 2), ("a", 3), ("c", 4)])  # ty: ignore [too-many-positional-arguments]
+    copied = md.copy()
+
+    # Test that content is identical
+    assert len(copied) == len(md)
+    assert list(copied.items()) == list(md.items())
+    assert list(copied.keys()) == list(md.keys())
+    assert list(copied.values()) == list(md.values())
+
+    # Test that duplicate keys are preserved
+    assert copied.getall("a") == md.getall("a") == [1, 3]
+
+    # Test that they are different objects
+    assert md is not copied
+
+    # Test that changes to original don't affect copy
+    md.add("d", 5)
+    assert len(md) == 5
+    assert len(copied) == 4
+    assert "d" not in copied
+
+    # Test that changes to copy don't affect original
+    copied.add("e", 6)
+    assert len(copied) == 5
+    assert len(md) == 5
+    assert "e" not in md
+
+    # Test that copy() creates a shallow copy (values are not deep copied)
+    value_list = [1, 2, 3]
+    md_with_mutable = cls([("key", value_list)])  # ty: ignore [too-many-positional-arguments]
+    copied_with_mutable = md_with_mutable.copy()
+
+    # The list should be the same object (shallow copy)
+    assert copied_with_mutable["key"] is value_list
+    assert md_with_mutable["key"] is value_list
