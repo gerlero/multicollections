@@ -7,7 +7,7 @@ if sys.version_info >= (3, 12):
 else:
     try:
         from typing_extensions import override
-    except ImportError:
+    except ImportError:  # pragma: nocover
         if TYPE_CHECKING:
             raise
 
