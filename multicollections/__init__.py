@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import itertools
 import sys
 from typing import TypeVar
 
@@ -167,8 +168,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         This replaces existing values for keys found in the other object.
         This is optimized for batch operations.
         """
-        import itertools
-        
         # Collect all items first
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
@@ -230,8 +229,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         Keys from `other` that already exist in the multi-mapping will not be added.
         This is optimized for batch operations.
         """
-        import itertools
-        
         # Get existing keys once for efficiency
         existing_keys = set(self._key_indices.keys())
         
@@ -263,8 +260,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         This is optimized for batch operations to avoid rebuilding indices 
         multiple times.
         """
-        import itertools
-        
         # Collect all new items first
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
