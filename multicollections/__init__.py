@@ -153,11 +153,9 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
-        # Create new instance without calling __init__ to avoid rebuilding indices
         new_md = MultiDict.__new__(MultiDict)
-        new_md._items = self._items.copy()  # Shallow copy of items list
-        # Copy the index structure directly instead of rebuilding it
-        new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}
+        new_md._items = self._items.copy()  # noqa: SLF001
+        new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}  # noqa: SLF001
         return new_md
 
     def __repr__(self) -> str:
