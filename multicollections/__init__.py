@@ -52,14 +52,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         if self._items:
             self._rebuild_indices()
 
-    def _add_item(self, key: _K, value: _V) -> None:
-        """Add an item and update the key index."""
-        index = len(self._items)
-        self._items.append((key, value))
-        if key not in self._key_indices:
-            self._key_indices[key] = []
-        self._key_indices[key].append(index)
-
     @with_default
     def getall(self, key: _K) -> list[_V]:
         """Get all values for a key.
@@ -95,7 +87,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
                 self._rebuild_indices()
         else:
             # Key doesn't exist, add it
-            self._add_item(key, value)
+            self.add(key, value)
 
     def _rebuild_indices(self) -> None:
         """Rebuild the key indices after items list has been modified."""
@@ -107,7 +99,11 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     def add(self, key: _K, value: _V) -> None:
         """Add a new value for a key."""
-        self._add_item(key, value)
+        index = len(self._items)
+        self._items.append((key, value))
+        if key not in self._key_indices:
+            self._key_indices[key] = []
+        self._key_indices[key].append(index)
 
     @with_default
     def popone(self, key: _K) -> _V:
