@@ -151,6 +151,11 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """Return the total number of items."""
         return len(self._items)
 
+    def clear(self) -> None:
+        """Remove all items from the multi-mapping."""
+        self._items.clear()
+        self._key_indices.clear()
+
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
         return MultiDict(self._items)
