@@ -8,19 +8,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Callable, Generic, TypeVar
-
-if sys.version_info >= (3, 12):
-    from typing import override
-else:
-    try:
-        from typing_extensions import override
-    except ImportError:
-        # Fallback for environments without typing_extensions
-        def override(func: Callable) -> Callable:
-            """Fallback override decorator that does nothing."""
-            return func
-
+from typing import Generic, TypeVar
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -44,6 +32,8 @@ else:
         MutableMapping,
         Sequence,
     )
+
+from ._util import override
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")

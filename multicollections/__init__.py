@@ -4,19 +4,7 @@ from __future__ import annotations
 
 import itertools
 import sys
-from typing import Callable, TypeVar
-
-if sys.version_info >= (3, 12):
-    from typing import override
-else:
-    try:
-        from typing_extensions import override
-    except ImportError:
-        # Fallback for environments without typing_extensions
-        def override(func: Callable) -> Callable:
-            """Fallback override decorator that does nothing."""
-            return func
-
+from typing import TypeVar
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -33,6 +21,7 @@ else:
         Sequence,
     )
 
+from ._util import override
 from .abc import MutableMultiMapping, with_default
 
 _K = TypeVar("_K")
