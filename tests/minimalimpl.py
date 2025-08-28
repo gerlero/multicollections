@@ -78,4 +78,3 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
 
     def __len__(self) -> int:
         return len(self._items)
-
