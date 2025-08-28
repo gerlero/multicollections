@@ -310,6 +310,18 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}  # noqa: SLF001
         return new_md
 
+    def __eq__(self, other: object) -> bool:
+        """Return True if the MultiDict is equal to another object.
+        
+        Two MultiDict instances are equal if they have the same sequence of
+        key-value pairs in the same order, following multidict's semantics.
+        """
+        if not isinstance(other, MutableMultiMapping):
+            return False
+        
+        # Compare the items sequences directly for order-sensitive equality
+        return list(self.items()) == list(other.items())
+
     def __repr__(self) -> str:
         """Return a string representation of the MultiDict."""
         return f"{self.__class__.__name__}({list(self._items)!r})"
