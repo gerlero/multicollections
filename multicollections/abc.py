@@ -6,7 +6,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Generic, TypeVar, overload
+from typing import Any, Callable, Generic, TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -32,6 +32,71 @@ else:
 K = TypeVar("K")
 V = TypeVar("V")
 D = TypeVar("D")
+
+
+class _NoDefault:
+    pass
+
+
+_NO_DEFAULT = _NoDefault()
+
+
+def withdefault(base_method: Callable[..., Any]) -> Callable[..., Any]:
+    """Decorator to add default parameter handling to methods that can raise KeyError.
+    
+    This decorator simplifies the definition of methods that have an optional default
+    parameter. It automatically handles the pattern of trying the base operation and
+    falling back to the default value if a KeyError is raised.
+    
+    The decorated method should be the base implementation that raises KeyError
+    when the requested key is not found. The decorator will wrap it to handle
+    the default parameter.
+    
+    Note: This decorator is primarily useful for creating new methods. For existing
+    methods with complex type overloads, consider using _with_default_handling() helper.
+    """
+    def wrapper(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> Any:
+        try:
+            return base_method(self, key)
+        except KeyError:
+            if default is _NO_DEFAULT:
+                raise
+            return default  # type: ignore[return-value]
+    
+    # Copy metadata from the original method
+    wrapper.__name__ = base_method.__name__
+    wrapper.__doc__ = base_method.__doc__
+    wrapper.__annotations__ = base_method.__annotations__.copy()
+    
+    # Add the default parameter to annotations
+    wrapper.__annotations__['default'] = D | _NoDefault
+    
+    return wrapper
+
+
+def _with_default_handling(operation: Callable[[], V], default: D | _NoDefault) -> V | D:
+    """Helper function to handle the common default parameter pattern.
+    
+    This function encapsulates the repetitive try/except pattern used in methods
+    that have optional default parameters.
+    
+    Args:
+        operation: A callable that performs the operation and may raise KeyError
+        default: The default value to return, or _NO_DEFAULT to re-raise KeyError
+        
+    Returns:
+        The result of the operation, or the default value if KeyError was raised
+        and default is not _NO_DEFAULT.
+        
+    Raises:
+        KeyError: If the operation raises KeyError and default is _NO_DEFAULT.
+    """
+    try:
+        return operation()
+    except KeyError:
+        if default is _NO_DEFAULT:
+            raise
+        return default  # type: ignore[return-value]
 
 
 class MultiMappingView(MappingView, Collection):
@@ -85,13 +150,6 @@ class ValuesView(MultiMappingView):
         yield from (v for _, v in self._mapping.items())
 
 
-class _NoDefault:
-    pass
-
-
-_NO_DEFAULT = _NoDefault()
-
-
 class MultiMapping(Mapping[K, V], Generic[K, V]):
     """Abstract base class for multi-mapping collections.
 
@@ -131,12 +189,7 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
-        try:
-            return self.getall(key)[0]
-        except KeyError:
-            if default is _NO_DEFAULT:
-                raise
-            return default  # ty: ignore[invalid-return-type]
+        return _with_default_handling(lambda: self.getall(key)[0], default)
 
     def __getitem__(self, key: K) -> V:
         """Get the first value for a key.
@@ -164,7 +217,7 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
         if not ret:
             if default is _NO_DEFAULT:
                 raise KeyError(key)
-            return default  # ty: ignore[invalid-return-type]
+            return default  # type: ignore[return-value]
         return ret
 
     def keys(self) -> KeysView[K]:
@@ -221,12 +274,7 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
-        try:
-            return self._popone(key)
-        except KeyError:
-            if default is _NO_DEFAULT:
-                raise
-            return default  # type: ignore[invalid-return-type]
+        return _with_default_handling(lambda: self._popone(key), default)
 
     @overload
     def popall(self, key: K) -> list[V]: ...
@@ -239,12 +287,10 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
-        try:
-            return [self.popone(key) for _ in range(len(self.getall(key)))]
-        except KeyError:
-            if default is _NO_DEFAULT:
-                raise
-            return default  # type: ignore[invalid-return-type]
+        return _with_default_handling(
+            lambda: [self.popone(key) for _ in range(len(self.getall(key)))], 
+            default
+        )
 
     @overload
     def pop(self, key: K) -> V: ...
@@ -254,8 +300,6 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
 
     def pop(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> V | D:
         """Same as `popone`."""
-        if default is _NO_DEFAULT:
-            return self.popone(key)
         return self.popone(key, default)
 
     def popitem(self) -> tuple[K, V]:
