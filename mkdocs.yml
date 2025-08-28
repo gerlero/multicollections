@@ -21,7 +21,6 @@ plugins:
                     show_signature_annotations: true
                     show_symbol_type_toc: true
                     inherited_members: true
-                    filters: false
 
 nav:
     - Home: 'index.md'

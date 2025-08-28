@@ -21,7 +21,7 @@ else:
 import multidict
 import pytest
 from multicollections import MultiDict
-from multicollections.abc import MutableMultiMapping
+from multicollections.abc import MutableMultiMapping, with_default
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -41,8 +41,12 @@ class ListMultiDict(MutableMultiMapping[K, V]):
         for key, value in kwargs.items():
             self._items.append((key, value))
 
-    def _getall(self, key: K) -> list[V]:
-        return [v for k, v in self._items if k == key]
+    @with_default
+    def getall(self, key: K) -> list[V]:
+        ret = [v for k, v in self._items if k == key]
+        if not ret:
+            raise KeyError(key)
+        return ret
 
     def __setitem__(self, key: K, value: V) -> None:
         replaced: int | None = None
@@ -66,7 +70,8 @@ class ListMultiDict(MutableMultiMapping[K, V]):
     def add(self, key: K, value: V) -> None:
         self._items.append((key, value))
 
-    def _popone(self, key: K) -> V:
+    @with_default
+    def popone(self, key: K) -> V:
         for i, (k, v) in enumerate(self._items):
             if k == key:
                 del self._items[i]
