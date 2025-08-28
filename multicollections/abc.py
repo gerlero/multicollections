@@ -33,6 +33,16 @@ K = TypeVar("K")
 V = TypeVar("V")
 D = TypeVar("D")
 
+__all__ = [
+    "MultiMapping",
+    "MutableMultiMapping", 
+    "MultiMappingView",
+    "KeysView",
+    "ItemsView", 
+    "ValuesView",
+    "withdefault",
+]
+
 
 class _NoDefault:
     pass
