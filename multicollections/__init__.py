@@ -20,7 +20,7 @@ else:
         Sequence,
     )
 
-from .abc import MutableMultiMapping
+from .abc import MutableMultiMapping, with_default
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -55,9 +55,16 @@ class MultiDict(MutableMultiMapping[K, V]):
             self._key_indices[key] = []
         self._key_indices[key].append(index)
 
-    def _getall(self, key: K) -> list[V]:
-        """Get all values for a key."""
-        return [self._items[i][1] for i in self._key_indices.get(key, [])]
+    @with_default
+    def getall(self, key: K) -> list[V]:
+        """Get all values for a key.
+
+        Raises a `KeyError` if the key is not found and no default is provided.
+        """
+        ret = [self._items[i][1] for i in self._key_indices.get(key, [])]
+        if not ret:
+            raise KeyError(key)
+        return ret
 
     def __setitem__(self, key: K, value: V) -> None:
         """Set the value for a key.
@@ -94,10 +101,11 @@ class MultiDict(MutableMultiMapping[K, V]):
             self._key_indices[key].append(i)
 
     def add(self, key: K, value: V) -> None:
-        """Add a value for a key."""
+        """Add a new value for a key."""
         self._add_item(key, value)
 
-    def _popone(self, key: K) -> V:
+    @with_default
+    def popone(self, key: K) -> V:
         """Remove and return the first value for a key."""
         if key not in self._key_indices:
             raise KeyError(key)

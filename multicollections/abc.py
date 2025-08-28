@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import contextlib
+import functools
 import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Generic, TypeVar, overload
+from typing import Generic, TypeVar
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
+        Callable,
         Collection,
         Iterable,
         Iterator,
@@ -20,6 +23,7 @@ if sys.version_info >= (3, 9):
     )
 else:
     from typing import (
+        Callable,
         Collection,
         Iterable,
         Iterator,
@@ -92,6 +96,25 @@ class _NoDefault:
 _NO_DEFAULT = _NoDefault()
 
 
+def with_default(
+    meth: Callable[[MultiMappingView[K, V], K], V],
+) -> Callable[[MultiMappingView[K, V], K, D], V | D]:
+    """Add a default value argument to a method that can raise a `KeyError`."""
+
+    @functools.wraps(meth)
+    def wrapper(
+        self: MultiMappingView[K, V], key: K, default: D | _NoDefault = _NO_DEFAULT
+    ) -> V | D:
+        try:
+            return meth(self, key)
+        except KeyError:
+            if default is _NO_DEFAULT:
+                raise
+            return default  # ty: ignore [invalid-return-type]
+
+    return wrapper
+
+
 class MultiMapping(Mapping[K, V], Generic[K, V]):
     """Abstract base class for multi-mapping collections.
 
@@ -100,10 +123,11 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
     """
 
     @abstractmethod
-    def _getall(self, key: K) -> list[V]:
+    @with_default
+    def getall(self, key: K) -> list[V]:
         """Get all values for a key.
 
-        Returns an empty list if no values are found.
+        Raises a `KeyError` if the key is not found and no default is provided.
         """
         raise NotImplementedError  # pragma: no cover
 
@@ -120,23 +144,13 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError  # pragma: no cover
 
-    @overload
-    def getone(self, key: K) -> V: ...
-
-    @overload
-    def getone(self, key: K, default: D) -> V | D: ...
-
-    def getone(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> V | D:
+    @with_default
+    def getone(self, key: K) -> V:
         """Get the first value for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
-        try:
-            return self.getall(key)[0]
-        except KeyError:
-            if default is _NO_DEFAULT:
-                raise
-            return default  # ty: ignore[invalid-return-type]
+        return self.getall(key)[0]
 
     def __getitem__(self, key: K) -> V:
         """Get the first value for a key.
@@ -144,28 +158,6 @@ class MultiMapping(Mapping[K, V], Generic[K, V]):
         Raises a `KeyError` if the key is not found.
         """
         return self.getone(key)
-
-    @overload
-    def getall(self, key: K) -> list[V]: ...
-
-    @overload
-    def getall(self, key: K, default: D) -> list[V] | D: ...
-
-    def getall(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> list[V] | D:
-        """Get all values for a key as a list.
-
-        Raises a `KeyError` if the key is not found and no default is provided.
-        """
-        try:
-            ret = self._getall(key)
-        except KeyError as e:  # pragma: no cover
-            msg = "_getall must return an empty list instead of raising KeyError"
-            raise RuntimeError(msg) from e
-        if not ret:
-            if default is _NO_DEFAULT:
-                raise KeyError(key)
-            return default  # ty: ignore[invalid-return-type]
-        return ret
 
     def keys(self) -> KeysView[K]:
         """Return a view of the keys in the MultiMapping."""
@@ -203,60 +195,30 @@ class MutableMultiMapping(MultiMapping[K, V], MutableMapping[K, V]):
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def _popone(self, key: K) -> V:
+    @with_default
+    def popone(self, key: K) -> V:
         """Remove and return the first value for a key.
 
         Raises a `KeyError` if the key is not found.
         """
         raise NotImplementedError  # pragma: no cover
 
-    @overload
-    def popone(self, key: K) -> V: ...
-
-    @overload
-    def popone(self, key: K, default: D) -> V | D: ...
-
-    def popone(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> V | D:
-        """Remove and return the first value for a key.
-
-        Raises a `KeyError` if the key is not found and no default is provided.
-        """
-        try:
-            return self._popone(key)
-        except KeyError:
-            if default is _NO_DEFAULT:
-                raise
-            return default  # type: ignore[invalid-return-type]
-
-    @overload
-    def popall(self, key: K) -> list[V]: ...
-
-    @overload
-    def popall(self, key: K, default: D) -> list[V] | D: ...
-
-    def popall(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> list[V] | D:
+    @with_default
+    def popall(self, key: K) -> list[V]:
         """Remove and return all values for a key as a list.
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
-        try:
-            return [self.popone(key) for _ in range(len(self.getall(key)))]
-        except KeyError:
-            if default is _NO_DEFAULT:
-                raise
-            return default  # type: ignore[invalid-return-type]
+        ret = [self.popone(key)]
+        with contextlib.suppress(KeyError):
+            while True:
+                ret.append(self.popone(key))
+        return ret
 
-    @overload
-    def pop(self, key: K) -> V: ...
-
-    @overload
-    def pop(self, key: K, default: D) -> V | D: ...
-
-    def pop(self, key: K, default: D | _NoDefault = _NO_DEFAULT) -> V | D:
+    @with_default
+    def pop(self, key: K) -> V:
         """Same as `popone`."""
-        if default is _NO_DEFAULT:
-            return self.popone(key)
-        return self.popone(key, default)
+        return self.popone(key)
 
     def popitem(self) -> tuple[K, V]:
         """Remove and return a (key, value) pair."""
