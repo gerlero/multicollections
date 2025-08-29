@@ -8,7 +8,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Generic, TypeVar
+from typing import TYPE_CHECKING, Generic, TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -33,11 +33,15 @@ else:
         Sequence,
     )
 
+if TYPE_CHECKING:
+    from typing import Protocol
+
 from ._util import override
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
 _D = TypeVar("_D")
+_Self = TypeVar("_Self")
 
 
 class MultiMappingView(MappingView, Collection):
@@ -53,7 +57,7 @@ class KeysView(MultiMappingView):
     """View for the keys in a MultiMapping."""
 
     @override
-    def __contains__(self, key: _K) -> bool:
+    def __contains__(self, key: object) -> bool:
         """Check if the key is in the mapping."""
         return key in self._mapping
 
@@ -67,9 +71,12 @@ class ItemsView(MultiMappingView):
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
-    def __contains__(self, item: tuple[_K, _V]) -> bool:
+    def __contains__(self, item: object) -> bool:
         """Check if the item is in the mapping."""
-        key, value = item
+        try:
+            key, value = item  # ty: ignore[not-iterable]
+        except TypeError:
+            return False
         try:
             return value in self._mapping.getall(key)
         except KeyError:
@@ -78,7 +85,7 @@ class ItemsView(MultiMappingView):
     @override
     def __iter__(self) -> Iterator[tuple[_K, _V]]:
         """Return an iterator over the items (key-value pairs)."""
-        counts = defaultdict(int)
+        counts: defaultdict[_K, int] = defaultdict(int)
         for k in self._mapping:
             yield (k, self._mapping.getall(k)[counts[k]])
             counts[k] += 1
@@ -88,7 +95,7 @@ class ValuesView(MultiMappingView):
     """View for the values in a MultiMapping."""
 
     @override
-    def __contains__(self, value: _V) -> bool:
+    def __contains__(self, value: object) -> bool:
         """Check if the value is in the mapping."""
         return value in iter(self)
 
@@ -104,15 +111,30 @@ class _NoDefault:
 
 _NO_DEFAULT = _NoDefault()
 
+if TYPE_CHECKING:
+
+    class _CallableWithDefault(Protocol[_Self, _K, _V, _D]):
+        @overload
+        def __call__(self: _Self, key: _K) -> _V: ...
+
+        @overload
+        def __call__(self: _Self, key: _K, default: _D) -> _V | _D: ...
+
 
 def with_default(
-    meth: Callable[[MultiMappingView[_K, _V], _K], _V],
-) -> Callable[[MultiMappingView[_K, _V], _K, _D], _V | _D]:
+    meth: Callable[[_Self, _K], _V],
+) -> _CallableWithDefault[_Self, _K, _V, _D]:
     """Add a default value argument to a method that can raise a `KeyError`."""
+
+    @overload
+    def wrapper(self: _Self, key: _K) -> _V: ...
+
+    @overload
+    def wrapper(self: _Self, key: _K, default: _D) -> _V | _D: ...
 
     @functools.wraps(meth)
     def wrapper(
-        self: MultiMappingView[_K, _V], key: _K, default: _D | _NoDefault = _NO_DEFAULT
+        self: _Self, key: _K, default: _D | _NoDefault = _NO_DEFAULT
     ) -> _V | _D:
         try:
             return meth(self, key)
