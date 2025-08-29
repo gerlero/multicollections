@@ -33,7 +33,7 @@ else:
         Sequence,
     )
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from typing import Protocol
 
 from ._util import override
@@ -111,7 +111,7 @@ class _NoDefault:
 
 _NO_DEFAULT = _NoDefault()
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
 
     class _CallableWithDefault(Protocol[_Self, _K, _V, _D]):
         @overload

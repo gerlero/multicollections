@@ -267,6 +267,8 @@ def test_contains(cls: type[MutableMultiMapping]) -> None:
     assert "a" in md
     assert "b" in md
     assert "missing" not in md
+    if cls is not multidict.MultiDict or sys.version_info >= (3, 9):
+        assert None not in md
 
     # Test with empty MultiDict
     empty_md = cls()
