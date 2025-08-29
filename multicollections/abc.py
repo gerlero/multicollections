@@ -8,7 +8,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Tuple, TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -53,7 +53,7 @@ class MultiMappingView(MappingView, Collection):
         super().__init__(mapping)
 
 
-class KeysView(MultiMappingView):
+class KeysView(MultiMappingView, Collection[_K]):
     """View for the keys in a MultiMapping."""
 
     @override
@@ -67,7 +67,7 @@ class KeysView(MultiMappingView):
         return iter(self._mapping)
 
 
-class ItemsView(MultiMappingView):
+class ItemsView(MultiMappingView, Collection[Tuple[_K, _V]]):
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
@@ -91,7 +91,7 @@ class ItemsView(MultiMappingView):
             counts[k] += 1
 
 
-class ValuesView(MultiMappingView):
+class ValuesView(MultiMappingView, Collection[_V]):
     """View for the values in a MultiMapping."""
 
     @override
@@ -146,7 +146,7 @@ def with_default(
     return wrapper
 
 
-class MultiMapping(Mapping[_K, _V], Generic[_K, _V]):
+class MultiMapping(Mapping[_K, _V]):
     """Abstract base class for multi-mapping collections.
 
     A multi-mapping is a mapping that can hold multiple values for the same key.
