@@ -127,10 +127,10 @@ def with_default(
     """Add a default value argument to a method that can raise a `KeyError`."""
 
     @overload
-    def wrapper(self: _Self, key: _K) -> _V: ...
+    def wrapper(self: _Self, key: _K) -> _V: ...  # pragma: no cover
 
     @overload
-    def wrapper(self: _Self, key: _K, default: _D) -> _V | _D: ...
+    def wrapper(self: _Self, key: _K, default: _D) -> _V | _D: ...  # pragma: no cover
 
     @functools.wraps(meth)
     def wrapper(
