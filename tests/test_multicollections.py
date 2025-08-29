@@ -213,6 +213,9 @@ def test_items_view_contains(cls: type[MutableMultiMapping]) -> None:
     assert ("c", 1) not in items  # Key doesn't exist
     assert ("b", 1) not in items  # Wrong value for existing key
 
+    # Test different type
+    assert None not in items
+
     # Test empty case
     empty_md = cls()
     empty_items = empty_md.items()
