@@ -280,20 +280,24 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
     def extend(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (),
         **kwargs: _V,
     ) -> None:
         """Extend the multi-mapping with items from another object."""
-        items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())
-        for item in items:
-            if isinstance(item, Sequence) and len(item) >= 2:
-                key, value = item[0], item[1]  # ty: ignore[assignment]
-                self.add(key, value)  # ty: ignore[arg-type]
+        if isinstance(other, Mapping):
+            for key, value in other.items():
+                self.add(key, value)
+        else:
+            for key, value in other:
+                self.add(key, value)
+        
+        # Handle kwargs separately
+        for key, value in kwargs.items():
+            self.add(key, value)  # ty: ignore[arg-type]
 
     def merge(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (),
         **kwargs: _V,
     ) -> None:
         """Merge another object into the multi-mapping.
@@ -301,33 +305,42 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         Keys from `other` that already exist in the multi-mapping will not be replaced.
         """
         existing_keys = set(self.keys())
-        items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())
-        for item in items:
-            if isinstance(item, Sequence) and len(item) >= 2:
-                key, value = item[0], item[1]  # ty: ignore[assignment]
+        
+        if isinstance(other, Mapping):
+            for key, value in other.items():
                 if key not in existing_keys:
-                    self.add(key, value)  # ty: ignore[arg-type]
+                    self.add(key, value)
+        else:
+            for key, value in other:
+                if key not in existing_keys:
+                    self.add(key, value)
+        
+        # Handle kwargs separately
+        for key, value in kwargs.items():
+            if key not in existing_keys:  # ty: ignore[operator]
+                self.add(key, value)  # ty: ignore[arg-type]
 
     @override
-    def update(
-        self,
-        other: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (),
-        **kwargs: _V,
-    ) -> None:
+    def update(self, *args: Mapping[_K, _V] | Iterable[tuple[_K, _V]], **kwargs: _V) -> None:  # ty: ignore[override]
         """Update the multi-mapping with items from another object.
 
         This replaces existing values for keys found in the other object.
         """
-        existing_keys = set(self.keys())
-        if isinstance(other, Mapping):
-            items = other.items()
-        else:
-            items = other
-        items = itertools.chain(items, kwargs.items())
-        for key, value in items:
-            if key in existing_keys:
-                self[key] = value
-                existing_keys.discard(key)
+        # Handle the different call signatures like dict.update()
+        if args:
+            other = args[0]
+            existing_keys = set(self.keys())
+            if isinstance(other, Mapping):
+                items = other.items()
             else:
-                self.add(key, value)
+                items = other
+            for key, value in items:
+                if key in existing_keys:
+                    self[key] = value
+                    existing_keys.discard(key)
+                else:
+                    self.add(key, value)
+        
+        # Handle keyword arguments
+        for key, value in kwargs.items():
+            self[key] = value  # ty: ignore[index, assignment]
