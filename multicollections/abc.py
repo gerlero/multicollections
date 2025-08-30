@@ -8,7 +8,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Tuple, TypeVar, overload, Generic
+from typing import TYPE_CHECKING, Tuple, TypeVar, overload, Generic, cast
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -331,7 +331,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
             other = args[0]
             existing_keys = set(self.keys())
             if isinstance(other, Mapping):
-                items = other.items()
+                items: Iterable[tuple[_K, _V]] = other.items()
             else:
                 items = other
             for key, value in items:

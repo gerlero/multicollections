@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import itertools
 import sys
-from typing import TypeVar
+from typing import TypeVar, cast
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -48,7 +48,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             self._items.extend(iterable)
 
         # Add kwargs items
-        self._items.extend((key, value) for key, value in kwargs.items())  # ty: ignore[misc]
+        self._items.extend(cast(Iterable[tuple[_K, _V]], kwargs.items()))
 
         # Build indices in one pass for better performance
         if self._items:
@@ -215,13 +215,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             other = args[0]
             # Collect all items first
             if isinstance(other, Mapping):
-                items = other.items()
+                items: Iterable[tuple[_K, _V]] = other.items()
             else:
                 items = other
-            all_items = list(itertools.chain(items, kwargs.items()))
+            all_items: list[tuple[_K, _V]] = list(itertools.chain(items, cast(Iterable[tuple[_K, _V]], kwargs.items())))
         else:
             # Only kwargs provided
-            all_items = list(kwargs.items())  # ty: ignore[misc]
+            all_items = list(cast(Iterable[tuple[_K, _V]], kwargs.items()))
 
         if not all_items:
             return
@@ -263,7 +263,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             other_items: Iterable[tuple[_K, _V]] = other.items()
         else:
             other_items = other
-        all_items: list[tuple[_K, _V]] = list(itertools.chain(other_items, kwargs.items()))  # ty: ignore[misc]
+        all_items: list[tuple[_K, _V]] = list(itertools.chain(other_items, cast(Iterable[tuple[_K, _V]], kwargs.items())))
         new_items = [(key, value) for key, value in all_items if key not in existing_keys]
 
         if not new_items:
@@ -295,7 +295,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             other_items: Iterable[tuple[_K, _V]] = other.items()
         else:
             other_items = other
-        new_items: list[tuple[_K, _V]] = list(itertools.chain(other_items, kwargs.items()))  # ty: ignore[misc]
+        new_items: list[tuple[_K, _V]] = list(itertools.chain(other_items, cast(Iterable[tuple[_K, _V]], kwargs.items())))
 
         if not new_items:
             return
