@@ -155,7 +155,7 @@ class MultiMapping(Mapping[_K, _V]):
 
     @abstractmethod
     @with_default
-    def getall(self, key: _K) -> list[_V]:
+    def getall(self, key: _K) -> Collection[_V]:
         """Get all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -181,7 +181,11 @@ class MultiMapping(Mapping[_K, _V]):
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
-        return self.getall(key)[0]
+        try:
+            return next(iter(self.getall(key)))
+        except StopIteration as e:  # pragma: no cover
+            msg = "MultiMapping.getall returned an empty collection"
+            raise RuntimeError(msg) from e
 
     @override
     def __getitem__(self, key: _K) -> _V:
@@ -239,8 +243,8 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @with_default
-    def popall(self, key: _K) -> list[_V]:
-        """Remove and return all values for a key as a list.
+    def popall(self, key: _K) -> Collection[_V]:
+        """Remove and return all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
