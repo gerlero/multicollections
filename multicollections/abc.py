@@ -8,7 +8,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Tuple, TypeVar, overload
+from typing import TYPE_CHECKING, Tuple, TypeVar, overload, Generic
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -44,8 +44,10 @@ _D = TypeVar("_D")
 _Self = TypeVar("_Self")
 
 
-class MultiMappingView(MappingView, Collection):
+class MultiMappingView(MappingView, Collection[object], Generic[_K, _V]):
     """Base class for MultiMapping views."""
+    
+    _mapping: MultiMapping[_K, _V]  # Type annotation for mypy
 
     @override
     def __init__(self, mapping: MultiMapping[_K, _V]) -> None:
@@ -53,7 +55,7 @@ class MultiMappingView(MappingView, Collection):
         super().__init__(mapping)
 
 
-class KeysView(MultiMappingView, Collection[_K]):
+class KeysView(MultiMappingView[_K, _V], Collection[_K]):
     """View for the keys in a MultiMapping."""
 
     @override
@@ -67,18 +69,20 @@ class KeysView(MultiMappingView, Collection[_K]):
         return iter(self._mapping)
 
 
-class ItemsView(MultiMappingView, Collection[Tuple[_K, _V]]):
+class ItemsView(MultiMappingView[_K, _V], Collection[Tuple[_K, _V]]):
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
     def __contains__(self, item: object) -> bool:
         """Check if the item is in the mapping."""
         try:
-            key, value = item  # ty: ignore[not-iterable]
-        except TypeError:
+            if not isinstance(item, (tuple, list)) or len(item) != 2:
+                return False
+            key, value = item
+        except (TypeError, ValueError):
             return False
         try:
-            return value in self._mapping.getall(key)
+            return value in self._mapping.getall(key)  # ty: ignore[arg-type]
         except KeyError:
             return False
 
@@ -91,13 +95,16 @@ class ItemsView(MultiMappingView, Collection[Tuple[_K, _V]]):
             counts[k] += 1
 
 
-class ValuesView(MultiMappingView, Collection[_V]):
+class ValuesView(MultiMappingView[_K, _V], Collection[_V]):
     """View for the values in a MultiMapping."""
 
     @override
     def __contains__(self, value: object) -> bool:
         """Check if the value is in the mapping."""
-        return value in iter(self)
+        for v in self:
+            if v == value:
+                return True
+        return False
 
     @override
     def __iter__(self) -> Iterator[_V]:
@@ -112,18 +119,14 @@ class _NoDefault:
 _NO_DEFAULT = _NoDefault()
 
 if TYPE_CHECKING:  # pragma: no cover
+    from typing import Any
 
-    class _CallableWithDefault(Protocol[_Self, _K, _V, _D]):
-        @overload
-        def __call__(self: _Self, key: _K) -> _V: ...
-
-        @overload
-        def __call__(self: _Self, key: _K, default: _D) -> _V | _D: ...
+    _CallableWithDefault = Any  # Simplified type for mypy
 
 
 def with_default(
     meth: Callable[[_Self, _K], _V],
-) -> _CallableWithDefault[_Self, _K, _V, _D]:
+) -> _CallableWithDefault:
     """Add a default value argument to a method that can raise a `KeyError`."""
 
     @overload
@@ -139,11 +142,11 @@ def with_default(
         try:
             return meth(self, key)
         except KeyError:
-            if default is _NO_DEFAULT:
+            if isinstance(default, _NoDefault):
                 raise
-            return default  # ty: ignore [invalid-return-type]
+            return default  # ty: ignore [return-value]
 
-    return wrapper
+    return wrapper  # ty: ignore [return-value]
 
 
 class MultiMapping(Mapping[_K, _V]):
@@ -181,7 +184,7 @@ class MultiMapping(Mapping[_K, _V]):
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
-        return self.getall(key)[0]
+        return self.getall(key)[0]  # ty: ignore[no-any-return]
 
     @override
     def __getitem__(self, key: _K) -> _V:
@@ -189,20 +192,20 @@ class MultiMapping(Mapping[_K, _V]):
 
         Raises a `KeyError` if the key is not found.
         """
-        return self.getone(key)
+        return self.getone(key)  # ty: ignore[no-any-return]
 
     @override
-    def keys(self) -> KeysView[_K]:
+    def keys(self) -> KeysView[_K, _V]:  # ty: ignore[override]
         """Return a view of the keys in the MultiMapping."""
         return KeysView(self)
 
     @override
-    def items(self) -> ItemsView[_K, _V]:
+    def items(self) -> ItemsView[_K, _V]:  # ty: ignore[override]
         """Return a view of the items (key-value pairs) in the MultiMapping."""
         return ItemsView(self)
 
     @override
-    def values(self) -> ValuesView[_V]:
+    def values(self) -> ValuesView[_K, _V]:  # ty: ignore[override]
         """Return a view of the values in the MultiMapping."""
         return ValuesView(self)
 
@@ -253,7 +256,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
     @with_default
     def pop(self, key: _K) -> _V:
         """Same as `popone`."""
-        return self.popone(key)
+        return self.popone(key)  # ty: ignore[no-any-return]
 
     def popitem(self) -> tuple[_K, _V]:
         """Remove and return a (key, value) pair."""
@@ -275,7 +278,6 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         for key in set(self.keys()):
             self.popall(key)
 
-    @override
     def extend(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -284,10 +286,11 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         """Extend the multi-mapping with items from another object."""
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
-        for key, value in items:
-            self.add(key, value)
+        for item in items:
+            if isinstance(item, Sequence) and len(item) >= 2:
+                key, value = item[0], item[1]  # ty: ignore[assignment]
+                self.add(key, value)  # ty: ignore[arg-type]
 
-    @override
     def merge(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -300,14 +303,16 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         existing_keys = set(self.keys())
         items = other.items() if isinstance(other, Mapping) else other
         items = itertools.chain(items, kwargs.items())
-        for key, value in items:
-            if key not in existing_keys:
-                self.add(key, value)
+        for item in items:
+            if isinstance(item, Sequence) and len(item) >= 2:
+                key, value = item[0], item[1]  # ty: ignore[assignment]
+                if key not in existing_keys:
+                    self.add(key, value)  # ty: ignore[arg-type]
 
     @override
     def update(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (),
         **kwargs: _V,
     ) -> None:
         """Update the multi-mapping with items from another object.
@@ -315,11 +320,14 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         This replaces existing values for keys found in the other object.
         """
         existing_keys = set(self.keys())
-        items = other.items() if isinstance(other, Mapping) else other
+        if isinstance(other, Mapping):
+            items = other.items()
+        else:
+            items = other
         items = itertools.chain(items, kwargs.items())
         for key, value in items:
             if key in existing_keys:
                 self[key] = value
-                existing_keys.remove(key)
+                existing_keys.discard(key)
             else:
                 self.add(key, value)
