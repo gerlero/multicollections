@@ -8,7 +8,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Tuple, TypeVar, overload
+from typing import TYPE_CHECKING, Generic, Tuple, TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -17,9 +17,9 @@ if sys.version_info >= (3, 9):
         Iterable,
         Iterator,
         Mapping,
-        MappingView,
         MutableMapping,
         Sequence,
+        Sized,
     )
 else:
     from typing import (
@@ -28,9 +28,9 @@ else:
         Iterable,
         Iterator,
         Mapping,
-        MappingView,
         MutableMapping,
         Sequence,
+        Sized,
     )
 
 if TYPE_CHECKING:  # pragma: no cover
@@ -44,21 +44,25 @@ _D = TypeVar("_D")
 _Self = TypeVar("_Self")
 
 
-class MultiMappingView(MappingView, Collection):
+class MultiMappingView(Generic[_K, _V], Sized):
     """Base class for MultiMapping views."""
 
-    @override
     def __init__(self, mapping: MultiMapping[_K, _V]) -> None:
         """Initialize the view with the given mapping."""
-        super().__init__(mapping)
+        self._mapping = mapping
+
+    @override
+    def __len__(self) -> int:
+        """Return the number of elements in the multi-mapping."""
+        return len(self._mapping)
 
 
-class KeysView(MultiMappingView, Collection[_K]):
+class KeysView(MultiMappingView[_K, _V], Collection[_K]):
     """View for the keys in a MultiMapping."""
 
     @override
     def __contains__(self, key: object) -> bool:
-        """Check if the key is in the mapping."""
+        """Check if the key is in the multi-mapping."""
         return key in self._mapping
 
     @override
@@ -67,18 +71,18 @@ class KeysView(MultiMappingView, Collection[_K]):
         return iter(self._mapping)
 
 
-class ItemsView(MultiMappingView, Collection[Tuple[_K, _V]]):
+class ItemsView(MultiMappingView[_K, _V], Collection[Tuple[_K, _V]]):
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
     def __contains__(self, item: object) -> bool:
-        """Check if the item is in the mapping."""
+        """Check if the item is in the multi-mapping."""
         try:
-            key, value = item  # ty: ignore[not-iterable]
+            key, value = item  # type: ignore[misc]
         except TypeError:
             return False
         try:
-            return value in self._mapping.getall(key)
+            return value in self._mapping.getall(key)  # type: ignore[has-type]
         except KeyError:
             return False
 
@@ -87,17 +91,22 @@ class ItemsView(MultiMappingView, Collection[Tuple[_K, _V]]):
         """Return an iterator over the items (key-value pairs)."""
         counts: defaultdict[_K, int] = defaultdict(int)
         for k in self._mapping:
-            yield (k, self._mapping.getall(k)[counts[k]])
+            yield (
+                k,
+                next(
+                    itertools.islice(self._mapping.getall(k), counts[k], counts[k] + 1)
+                ),
+            )
             counts[k] += 1
 
 
-class ValuesView(MultiMappingView, Collection[_V]):
+class ValuesView(MultiMappingView[_K, _V], Collection[_V]):
     """View for the values in a MultiMapping."""
 
     @override
     def __contains__(self, value: object) -> bool:
         """Check if the value is in the mapping."""
-        return value in iter(self)
+        return any(v == value for v in self)
 
     @override
     def __iter__(self) -> Iterator[_V]:
@@ -141,7 +150,7 @@ def with_default(
         except KeyError:
             if default is _NO_DEFAULT:
                 raise
-            return default  # ty: ignore [invalid-return-type]
+            return default  # type: ignore[return-value]
 
     return wrapper
 
@@ -163,6 +172,7 @@ class MultiMapping(Mapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
+    @override
     def __iter__(self) -> Iterator[_K]:
         """Return an iterator over the keys.
 
@@ -171,6 +181,7 @@ class MultiMapping(Mapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
+    @override
     def __len__(self) -> int:
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError  # pragma: no cover
@@ -196,17 +207,17 @@ class MultiMapping(Mapping[_K, _V]):
         return self.getone(key)
 
     @override
-    def keys(self) -> KeysView[_K]:
+    def keys(self) -> KeysView[_K, _V]:  # type: ignore[override]
         """Return a view of the keys in the MultiMapping."""
         return KeysView(self)
 
     @override
-    def items(self) -> ItemsView[_K, _V]:
+    def items(self) -> ItemsView[_K, _V]: # type: ignore[override]
         """Return a view of the items (key-value pairs) in the MultiMapping."""
         return ItemsView(self)
 
     @override
-    def values(self) -> ValuesView[_V]:
+    def values(self) -> ValuesView[_K, _V]: # type: ignore[override]
         """Return a view of the values in the MultiMapping."""
         return ValuesView(self)
 
@@ -218,6 +229,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
     """
 
     @abstractmethod
+    @override
     def __setitem__(self, key: _K, value: _V) -> None:
         """Set the value for a key.
 
@@ -255,10 +267,12 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         return ret
 
     @with_default
+    @override
     def pop(self, key: _K) -> _V:
         """Same as `popone`."""
         return self.popone(key)
 
+    @override
     def popitem(self) -> tuple[_K, _V]:
         """Remove and return a (key, value) pair."""
         key = next(iter(self))
@@ -279,7 +293,6 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         for key in set(self.keys()):
             self.popall(key)
 
-    @override
     def extend(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -287,11 +300,10 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
     ) -> None:
         """Extend the multi-mapping with items from another object."""
         items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())
+        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
         for key, value in items:
-            self.add(key, value)
+            self.add(key, value)  # type: ignore[arg-type]
 
-    @override
     def merge(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
@@ -303,13 +315,13 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         """
         existing_keys = set(self.keys())
         items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())
+        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
         for key, value in items:
             if key not in existing_keys:
-                self.add(key, value)
+                self.add(key, value)  # type: ignore[arg-type]
 
     @override
-    def update(
+    def update(  # type: ignore[override]
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
         **kwargs: _V,
@@ -320,10 +332,10 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         """
         existing_keys = set(self.keys())
         items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())
+        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
         for key, value in items:
             if key in existing_keys:
-                self[key] = value
-                existing_keys.remove(key)
+                self[key] = value  # type: ignore[index, assignment]
+                existing_keys.remove(key)  # type: ignore[arg-type]
             else:
-                self.add(key, value)
+                self.add(key, value)  # type: ignore[arg-type]

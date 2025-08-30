@@ -35,9 +35,9 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
                 self._items.append((key, value))
         else:
             for key, value in iterable:
-                self._items.append((key, value))
+                self._items.append((key, value))  # type: ignore[arg-type]
         for key, value in kwargs.items():
-            self._items.append((key, value))
+            self._items.append((key, value))  # type: ignore[arg-type]
 
     @override
     @with_default
