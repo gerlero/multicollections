@@ -32,7 +32,7 @@ requires-python = ">=3.7"
 [dependency-groups]
 lint = ["ruff"]
 typing = [
-    "ty; python_version>='3.8'",
+    "mypy>=1.4.1,<2",
     "typing_extensions >= 4.4.0; python_version<'3.12'"
 ]
 test = [
@@ -61,8 +61,12 @@ Homepage = "https://github.com/gerlero/multicollections"
 Repository = "https://github.com/gerlero/multicollections"
 Documentation = "https://multicollections.readthedocs.io"
 
-[tool.uv.build-backend]
-module-root = "."
+[tool.mypy]
+packages = [
+    "multicollections",
+    "tests",
+]
+strict = true
 
 [tool.ruff.lint]
 extend-select = ["ALL"]

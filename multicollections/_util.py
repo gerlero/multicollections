@@ -14,3 +14,6 @@ else:
         def override(func: Callable) -> Callable:
             """Fallback override decorator that does nothing."""
             return func
+
+
+__all__ = ["override"]
