@@ -8,7 +8,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Generic, Tuple, TypeVar, overload
+from typing import Generic, Tuple, TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -18,7 +18,6 @@ if sys.version_info >= (3, 9):
         Iterator,
         Mapping,
         MutableMapping,
-        Sequence,
         Sized,
     )
 else:
@@ -29,15 +28,10 @@ else:
         Iterator,
         Mapping,
         MutableMapping,
-        Sequence,
         Sized,
     )
 
-if TYPE_CHECKING:
-    from typing import Protocol
-
-
-from ._util import override
+from ._typing import MappingLike, MethodWithDefault, SupportsKeysAndGetItem, override
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
@@ -121,23 +115,11 @@ class _NoDefault:
 
 _NO_DEFAULT = _NoDefault()
 
-if TYPE_CHECKING:  # pragma: no cover
-    _Self_co = TypeVar("_Self_co", covariant=True)
-    _K_contra = TypeVar("_K_contra", contravariant=True)
-    _V_co = TypeVar("_V_co", covariant=True)
-
-    class _CallableWithDefault(Protocol[_Self_co, _K_contra, _V_co]):
-        @overload
-        def __call__(self: _Self_co, key: _K_contra, /) -> _V_co: ...
-
-        @overload
-        def __call__(self: _Self_co, key: _K_contra, /, default: _D) -> _V_co | _D: ...
-
 
 def with_default(
     meth: Callable[[_Self, _K], _V],
     /,
-) -> _CallableWithDefault[_Self, _K, _V]:
+) -> MethodWithDefault[_Self, _K, _V]:
     """Add a default value argument to a method that can raise a `KeyError`."""
 
     @overload
@@ -158,6 +140,19 @@ def with_default(
             return default  # type: ignore[return-value]
 
     return wrapper  # type: ignore[return-value]
+
+
+def _yield_items(
+    obj: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]], /, **kwargs: _V
+) -> Iterable[tuple[_K, _V]]:
+    if isinstance(obj, MappingLike):
+        yield from obj.items()
+    elif isinstance(obj, SupportsKeysAndGetItem):
+        yield from ((k, obj[k]) for k in obj.keys())  # noqa: SIM118
+    else:
+        yield from obj
+
+    yield from kwargs.items()  # type: ignore[misc]
 
 
 class MultiMapping(Mapping[_K, _V]):
@@ -300,19 +295,17 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
     def extend(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
         /,
         **kwargs: _V,
     ) -> None:
         """Extend the multi-mapping with items from another object."""
-        items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
-        for key, value in items:
-            self.add(key, value)  # type: ignore[arg-type]
+        for key, value in _yield_items(other, **kwargs):
+            self.add(key, value)
 
     def merge(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
         /,
         **kwargs: _V,
     ) -> None:
@@ -321,16 +314,14 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         Keys from `other` that already exist in the multi-mapping will not be replaced.
         """
         existing_keys = set(self.keys())
-        items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
-        for key, value in items:
+        for key, value in _yield_items(other, **kwargs):
             if key not in existing_keys:
-                self.add(key, value)  # type: ignore[arg-type]
+                self.add(key, value)
 
     @override
-    def update(  # type: ignore[override]
+    def update(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
         /,
         **kwargs: _V,
     ) -> None:
@@ -339,11 +330,9 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         This replaces existing values for keys found in the other object.
         """
         existing_keys = set(self.keys())
-        items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
-        for key, value in items:
+        for key, value in _yield_items(other, **kwargs):
             if key in existing_keys:
-                self[key] = value  # type: ignore[index, assignment]
-                existing_keys.remove(key)  # type: ignore[arg-type]
+                self[key] = value
+                existing_keys.remove(key)
             else:
-                self.add(key, value)  # type: ignore[arg-type]
+                self.add(key, value)

@@ -2,27 +2,16 @@
 
 from __future__ import annotations
 
-import itertools
 import sys
 from typing import TypeVar
 
 if sys.version_info >= (3, 9):
-    from collections.abc import (
-        Iterable,
-        Iterator,
-        Mapping,
-        Sequence,
-    )
+    from collections.abc import Iterable, Iterator
 else:
-    from typing import (
-        Iterable,
-        Iterator,
-        Mapping,
-        Sequence,
-    )
+    from typing import Iterable, Iterator
 
-from ._util import override
-from .abc import MutableMultiMapping, with_default
+from ._typing import SupportsKeysAndGetItem, override
+from .abc import MutableMultiMapping, _yield_items, with_default
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
@@ -36,22 +25,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     def __init__(
         self,
-        iterable: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        iterable: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
         /,
         **kwargs: _V,
     ) -> None:
         """Create a MultiDict."""
-        self._items: list[tuple[_K, _V]] = []
+        self._items: list[tuple[_K, _V]] = list(_yield_items(iterable, **kwargs))
         self._key_indices: dict[_K, list[int]] = {}
-
-        # Batch initialization: collect all items first, then build indices once
-        if isinstance(iterable, Mapping):
-            self._items.extend((key, value) for key, value in iterable.items())
-        else:
-            self._items.extend((key, value) for key, value in iterable)  # type: ignore[misc]
-
-        # Add kwargs items
-        self._items.extend((key, value) for key, value in kwargs.items())  # type: ignore[misc]
 
         # Build indices in one pass for better performance
         if self._items:
@@ -207,9 +187,9 @@ class MultiDict(MutableMultiMapping[_K, _V]):
                 self._items.append((key, value))
 
     @override
-    def update(  # type: ignore[override]
+    def update(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
         /,
         **kwargs: _V,
     ) -> None:
@@ -219,12 +199,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         This is optimized for batch operations.
         """
         # Collect all items first
-        all_items = list(
-            itertools.chain(
-                other.items() if isinstance(other, Mapping) else other,
-                kwargs.items(),
-            )
-        )
+        all_items = list(_yield_items(other, **kwargs))
 
         if not all_items:
             return
@@ -233,7 +208,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         existing_keys = set(self._key_indices.keys())
 
         # Separate items into updates and additions
-        updates_by_key, additions = self._collect_update_items(all_items, existing_keys)  # type: ignore[arg-type]
+        updates_by_key, additions = self._collect_update_items(all_items, existing_keys)
 
         # Process updates efficiently
         if updates_by_key:
@@ -250,7 +225,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     @override
     def merge(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
         /,
         **kwargs: _V,
     ) -> None:
@@ -265,10 +240,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         # Collect all items and filter out existing keys
         new_items = [
             (key, value)
-            for key, value in itertools.chain(
-                other.items() if isinstance(other, Mapping) else other,
-                kwargs.items(),
-            )
+            for key, value in _yield_items(other, **kwargs)
             if key not in existing_keys
         ]
 
@@ -288,7 +260,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     @override
     def extend(
         self,
-        other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
         /,
         **kwargs: _V,
     ) -> None:
@@ -298,19 +270,14 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         multiple times.
         """
         # Collect all new items first
-        new_items = list(
-            itertools.chain(
-                other.items() if isinstance(other, Mapping) else other,
-                kwargs.items(),
-            )
-        )
+        new_items = list(_yield_items(other, **kwargs))
 
         if not new_items:
             return
 
         # Add all items to the list at once
         start_index = len(self._items)
-        self._items.extend(new_items)  # type: ignore[arg-type]
+        self._items.extend(new_items)
 
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
