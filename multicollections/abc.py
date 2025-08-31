@@ -8,7 +8,7 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Generic, Tuple, TypeVar, overload
+from typing import TYPE_CHECKING, Generic, Tuple, TypeVar, cast, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -33,15 +33,18 @@ else:
         Sized,
     )
 
-if TYPE_CHECKING:  # pragma: no cover
-    from typing import Protocol
-
 from ._util import override
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
 _D = TypeVar("_D")
 _Self = TypeVar("_Self")
+
+# Type variables for the Protocol with proper variance
+_Self_co = TypeVar("_Self_co", covariant=True)
+_K_contra = TypeVar("_K_contra", contravariant=True)
+_V_co = TypeVar("_V_co", covariant=True)
+_D_contra = TypeVar("_D_contra", contravariant=True)
 
 
 class MultiMappingView(Generic[_K, _V], Sized):
@@ -121,13 +124,28 @@ class _NoDefault:
 _NO_DEFAULT = _NoDefault()
 
 if TYPE_CHECKING:  # pragma: no cover
+    from typing import Protocol
 
-    class _CallableWithDefault(Protocol[_Self, _K, _V, _D]):
+    class _CallableWithDefault(Protocol[_Self_co, _K_contra, _V_co, _D_contra]):
         @overload
-        def __call__(self: _Self, key: _K) -> _V: ...
+        def __call__(self: _Self_co, key: _K_contra) -> _V_co: ...
 
         @overload
-        def __call__(self: _Self, key: _K, default: _D) -> _V | _D: ...
+        def __call__(
+            self: _Self_co, key: _K_contra, default: _D_contra
+        ) -> _V_co | _D_contra: ...
+
+else:
+    from typing import Protocol
+
+    class _CallableWithDefault(Protocol[_Self_co, _K_contra, _V_co, _D_contra]):
+        @overload
+        def __call__(self: _Self_co, key: _K_contra) -> _V_co: ...
+
+        @overload
+        def __call__(
+            self: _Self_co, key: _K_contra, default: _D_contra
+        ) -> _V_co | _D_contra: ...
 
 
 def with_default(
@@ -152,7 +170,7 @@ def with_default(
                 raise
             return default  # type: ignore[return-value]
 
-    return wrapper
+    return cast("_CallableWithDefault[_Self, _K, _V, _D]", wrapper)
 
 
 class MultiMapping(Mapping[_K, _V]):
