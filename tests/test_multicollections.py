@@ -1004,3 +1004,33 @@ def test_process_updates_edge_cases() -> None:
     md._rebuild_indices()  # _process_updates doesn't rebuild indices  # noqa: SLF001
     assert md["a"] == 999
     assert md["b"] == 2
+
+
+def test_positional_only_arguments() -> None:
+    """Test that key methods only accept positional arguments like builtin dict."""
+    md = MultiDict([('a', 1), ('b', 2)])
+    
+    # These should work (positional arguments)
+    assert md.getall('a') == [1]
+    assert md.get('a') == 1
+    md.add('c', 3)
+    assert md.popone('c') == 3
+    
+    # These should fail (keyword arguments)
+    with pytest.raises(TypeError, match="got some positional-only arguments passed as keyword arguments"):
+        md.getall(key='a')
+    
+    with pytest.raises(TypeError, match="got some positional-only arguments passed as keyword arguments"):
+        md.get(key='a')
+        
+    with pytest.raises(TypeError, match="got some positional-only arguments passed as keyword arguments"):
+        md.add(key='d', value=4)
+        
+    with pytest.raises(TypeError, match="got some positional-only arguments passed as keyword arguments"):
+        md.popone(key='a')
+        
+    with pytest.raises(TypeError, match="got some positional-only arguments passed as keyword arguments"):
+        md.popall(key='a')
+
+    with pytest.raises(TypeError, match="got some positional-only arguments passed as keyword arguments"):
+        md.setdefault(key='e', default=5)

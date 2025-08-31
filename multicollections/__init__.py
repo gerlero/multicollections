@@ -56,7 +56,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     @with_default
-    def getall(self, key: _K) -> list[_V]:
+    def getall(self, key: _K, /) -> list[_V]:
         """Get all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -67,7 +67,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return ret
 
     @override
-    def __setitem__(self, key: _K, value: _V) -> None:
+    def __setitem__(self, key: _K, value: _V, /) -> None:
         """Set the value for a key.
 
         Replaces the first value for a key if it exists; otherwise, it adds a new item.
@@ -102,7 +102,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             indices_list.append(i)
 
     @override
-    def add(self, key: _K, value: _V) -> None:
+    def add(self, key: _K, value: _V, /) -> None:
         """Add a new value for a key."""
         index = len(self._items)
         self._items.append((key, value))
@@ -112,7 +112,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     @with_default
-    def popone(self, key: _K) -> _V:
+    def popone(self, key: _K, /) -> _V:
         """Remove and return the first value for a key."""
         if (indices := self._key_indices.get(key)) is None:
             raise KeyError(key)
@@ -130,7 +130,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return value
 
     @override
-    def __delitem__(self, key: _K) -> None:
+    def __delitem__(self, key: _K, /) -> None:
         """Remove all values for a key.
 
         Raises a `KeyError` if the key is not found.

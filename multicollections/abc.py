@@ -128,10 +128,10 @@ if TYPE_CHECKING:  # pragma: no cover
 
     class _CallableWithDefault(Protocol[_Self_co, _K_contra, _V_co]):
         @overload
-        def __call__(self: _Self_co, key: _K_contra) -> _V_co: ...
+        def __call__(self: _Self_co, key: _K_contra, /) -> _V_co: ...
 
         @overload
-        def __call__(self: _Self_co, key: _K_contra, default: _D) -> _V_co | _D: ...
+        def __call__(self: _Self_co, key: _K_contra, default: _D, /) -> _V_co | _D: ...
 
 
 def with_default(
@@ -140,14 +140,14 @@ def with_default(
     """Add a default value argument to a method that can raise a `KeyError`."""
 
     @overload
-    def wrapper(self: _Self, key: _K) -> _V: ...
+    def wrapper(self: _Self, key: _K, /) -> _V: ...
 
     @overload
-    def wrapper(self: _Self, key: _K, default: _D) -> _V | _D: ...
+    def wrapper(self: _Self, key: _K, default: _D, /) -> _V | _D: ...
 
     @functools.wraps(meth)  # type: ignore[misc]
     def wrapper(
-        self: _Self, key: _K, default: _D | _NoDefault = _NO_DEFAULT
+        self: _Self, key: _K, default: _D | _NoDefault = _NO_DEFAULT, /
     ) -> _V | _D:
         try:
             return meth(self, key)
@@ -168,7 +168,7 @@ class MultiMapping(Mapping[_K, _V]):
 
     @abstractmethod
     @with_default
-    def getall(self, key: _K) -> Collection[_V]:
+    def getall(self, key: _K, /) -> Collection[_V]:
         """Get all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -191,7 +191,7 @@ class MultiMapping(Mapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @with_default
-    def getone(self, key: _K) -> _V:
+    def getone(self, key: _K, /) -> _V:
         """Get the first value for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -203,12 +203,35 @@ class MultiMapping(Mapping[_K, _V]):
             raise RuntimeError(msg) from e
 
     @override
-    def __getitem__(self, key: _K) -> _V:
+    def __getitem__(self, key: _K, /) -> _V:
         """Get the first value for a key.
 
         Raises a `KeyError` if the key is not found.
         """
         return self.getone(key)
+
+    @override
+    def get(self, key: _K, default: _V = None, /) -> _V:  # type: ignore[assignment]
+        """Get the first value for a key.
+
+        Returns the default value if the key is not found. Default is None.
+        """
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+    @override
+    def setdefault(self, key: _K, default: _V = None, /) -> _V:  # type: ignore[assignment]
+        """Insert key with a value of default if key is not in the multi-mapping.
+
+        Return the value for key if key is in the multi-mapping, else default.
+        """
+        try:
+            return self.getone(key)
+        except KeyError:
+            self.add(key, default)
+            return default
 
     @override
     def keys(self) -> KeysView[_K, _V]:  # type: ignore[override]
@@ -234,7 +257,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
     @abstractmethod
     @override
-    def __setitem__(self, key: _K, value: _V) -> None:
+    def __setitem__(self, key: _K, value: _V, /) -> None:
         """Set the value for a key.
 
         If the key does not exist, it is added with the specified value.
@@ -245,13 +268,13 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def add(self, key: _K, value: _V) -> None:
+    def add(self, key: _K, value: _V, /) -> None:
         """Add a new value for a key."""
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
     @with_default
-    def popone(self, key: _K) -> _V:
+    def popone(self, key: _K, /) -> _V:
         """Remove and return the first value for a key.
 
         Raises a `KeyError` if the key is not found.
@@ -259,7 +282,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @with_default
-    def popall(self, key: _K) -> Collection[_V]:
+    def popall(self, key: _K, /) -> Collection[_V]:
         """Remove and return all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -272,7 +295,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
     @with_default
     @override
-    def pop(self, key: _K) -> _V:
+    def pop(self, key: _K, /) -> _V:
         """Same as `popone`."""
         return self.popone(key)
 
@@ -284,7 +307,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         return key, value
 
     @override
-    def __delitem__(self, key: _K) -> None:
+    def __delitem__(self, key: _K, /) -> None:
         """Remove all values for a key.
 
         Raises a `KeyError` if the key is not found.
