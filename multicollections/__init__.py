@@ -215,10 +215,12 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         This is optimized for batch operations.
         """
         # Collect all items first
-        all_items = list(itertools.chain(
-            other.items() if isinstance(other, Mapping) else other,
-            kwargs.items()  # type: ignore[arg-type]
-        ))
+        all_items = list(
+            itertools.chain(
+                other.items() if isinstance(other, Mapping) else other,
+                kwargs.items(),  # type: ignore[arg-type]
+            )
+        )
 
         if not all_items:
             return
@@ -257,10 +259,10 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         # Collect all items and filter out existing keys
         new_items = [
-            (key, value) 
+            (key, value)
             for key, value in itertools.chain(
                 other.items() if isinstance(other, Mapping) else other,
-                kwargs.items()  # type: ignore[arg-type]
+                kwargs.items(),  # type: ignore[arg-type]
             )
             if key not in existing_keys
         ]
@@ -290,10 +292,12 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         multiple times.
         """
         # Collect all new items first
-        new_items = list(itertools.chain(
-            other.items() if isinstance(other, Mapping) else other,
-            kwargs.items()  # type: ignore[arg-type]
-        ))
+        new_items = list(
+            itertools.chain(
+                other.items() if isinstance(other, Mapping) else other,
+                kwargs.items(),  # type: ignore[arg-type]
+            )
+        )
 
         if not new_items:
             return
