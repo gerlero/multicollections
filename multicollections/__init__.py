@@ -45,10 +45,10 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         if isinstance(iterable, Mapping):
             self._items.extend((key, value) for key, value in iterable.items())
         else:
-            self._items.extend((key, value) for key, value in iterable)
+            self._items.extend((key, value) for key, value in iterable)  # type: ignore[misc]
 
         # Add kwargs items
-        self._items.extend((key, value) for key, value in kwargs.items())
+        self._items.extend((key, value) for key, value in kwargs.items())  # type: ignore[misc]
 
         # Build indices in one pass for better performance
         if self._items:
@@ -84,7 +84,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             if len(indices) > 1:
                 # Remove duplicates efficiently by marking items as None and filtering
                 for idx in indices[1:]:
-                    self._items[idx] = None
+                    self._items[idx] = None  # type: ignore[call-overload]
 
                 # Filter out None items and rebuild indices
                 self._items = [item for item in self._items if item is not None]
@@ -122,7 +122,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         value = self._items[first_index][1]
 
         # Mark the first item for removal
-        self._items[first_index] = None
+        self._items[first_index] = None  # type: ignore[call-overload]
 
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
@@ -142,7 +142,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         # Mark items for removal
         indices_to_remove = self._key_indices[key]
         for idx in indices_to_remove:
-            self._items[idx] = None
+            self._items[idx] = None  # type: ignore[call-overload]
 
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
@@ -173,7 +173,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         existing_keys: set[_K],
     ) -> tuple[dict[_K, list[_V]], list[tuple[_K, _V]]]:
         """Separate items into updates and additions."""
-        updates_by_key = {}  # key -> list of values to replace with
+        updates_by_key: dict[_K, list[_V]] = {}  # key -> list of values to replace with
         additions = []  # list of (key, value) for new keys
 
         for key, value in all_items:
@@ -195,7 +195,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         # Mark items for removal
         for idx in items_to_remove:
-            self._items[idx] = None
+            self._items[idx] = None  # type: ignore[call-overload]
 
         # Filter out None items
         self._items = [item for item in self._items if item is not None]
@@ -206,7 +206,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
                 self._items.append((key, value))
 
     @override
-    def update(
+    def update(  # type: ignore[override]
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
         **kwargs: _V,
@@ -218,7 +218,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """
         # Collect all items first
         items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())
+        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
         all_items = list(items)
 
         if not all_items:
@@ -228,7 +228,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         existing_keys = set(self._key_indices.keys())
 
         # Separate items into updates and additions
-        updates_by_key, additions = self._collect_update_items(all_items, existing_keys)
+        updates_by_key, additions = self._collect_update_items(all_items, existing_keys)  # type: ignore[arg-type]
 
         # Process updates efficiently
         if updates_by_key:
@@ -258,7 +258,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         # Collect all items and filter out existing keys
         items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())
+        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
         new_items = [(key, value) for key, value in items if key not in existing_keys]
 
         if not new_items:
@@ -266,13 +266,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         # Add all items to the list at once
         start_index = len(self._items)
-        self._items.extend(new_items)
+        self._items.extend(new_items)  # type: ignore[arg-type]
 
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
             if key not in self._key_indices:
-                self._key_indices[key] = []
-            self._key_indices[key].append(i)
+                self._key_indices[key] = []  # type: ignore[index]
+            self._key_indices[key].append(i)  # type: ignore[index]
 
     @override
     def extend(
@@ -287,7 +287,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """
         # Collect all new items first
         items = other.items() if isinstance(other, Mapping) else other
-        items = itertools.chain(items, kwargs.items())
+        items = itertools.chain(items, kwargs.items())  # type: ignore[arg-type]
         new_items = list(items)
 
         if not new_items:
@@ -295,13 +295,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         # Add all items to the list at once
         start_index = len(self._items)
-        self._items.extend(new_items)
+        self._items.extend(new_items)  # type: ignore[arg-type]
 
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
             if key not in self._key_indices:
-                self._key_indices[key] = []
-            self._key_indices[key].append(i)
+                self._key_indices[key] = []  # type: ignore[index]
+            self._key_indices[key].append(i)  # type: ignore[index]
 
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
@@ -310,6 +310,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}  # noqa: SLF001
         return new_md
 
+    @override
     def __repr__(self) -> str:
         """Return a string representation of the MultiDict."""
         return f"{self.__class__.__name__}({list(self._items)!r})"
