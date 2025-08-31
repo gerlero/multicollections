@@ -218,7 +218,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         all_items = list(
             itertools.chain(
                 other.items() if isinstance(other, Mapping) else other,
-                kwargs.items(),  # type: ignore[arg-type]
+                kwargs.items(),
             )
         )
 
@@ -262,7 +262,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             (key, value)
             for key, value in itertools.chain(
                 other.items() if isinstance(other, Mapping) else other,
-                kwargs.items(),  # type: ignore[arg-type]
+                kwargs.items(),
             )
             if key not in existing_keys
         ]
@@ -272,13 +272,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         # Add all items to the list at once
         start_index = len(self._items)
-        self._items.extend(new_items)  # type: ignore[arg-type]
+        self._items.extend(new_items)
 
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
             if (indices_list := self._key_indices.get(key)) is None:
-                self._key_indices[key] = indices_list = []  # type: ignore[index]
-            indices_list.append(i)  # type: ignore[index]
+                self._key_indices[key] = indices_list = []
+            indices_list.append(i)
 
     @override
     def extend(
@@ -295,7 +295,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         new_items = list(
             itertools.chain(
                 other.items() if isinstance(other, Mapping) else other,
-                kwargs.items(),  # type: ignore[arg-type]
+                kwargs.items(),
             )
         )
 
@@ -309,8 +309,8 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
             if (indices_list := self._key_indices.get(key)) is None:
-                self._key_indices[key] = indices_list = []  # type: ignore[index]
-            indices_list.append(i)  # type: ignore[index]
+                self._key_indices[key] = indices_list = []
+            indices_list.append(i)
 
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
