@@ -95,10 +95,10 @@ class ItemsView(MultiMappingView[_K, _V], Collection[Tuple[_K, _V]]):
             yield (
                 k,
                 next(
-                    itertools.islice(self._mapping.getall(k), counts[k], counts[k] + 1)
+                    itertools.islice(self._mapping.getall(k), (count := counts[k]), count + 1)
                 ),
             )
-            counts[k] += 1
+            counts[k] = count + 1
 
 
 class ValuesView(MultiMappingView[_K, _V], Collection[_V]):
