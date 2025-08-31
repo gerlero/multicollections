@@ -3,12 +3,11 @@
 from __future__ import annotations
 
 import contextlib
-import functools
 import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import TYPE_CHECKING, Generic, Tuple, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Generic, Tuple, TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -33,6 +32,9 @@ else:
         Sized,
     )
 
+if TYPE_CHECKING:  # pragma: no cover
+    from typing import Protocol
+
 from ._util import override
 
 _K = TypeVar("_K")
@@ -40,7 +42,7 @@ _V = TypeVar("_V")
 _D = TypeVar("_D")
 _Self = TypeVar("_Self")
 
-# Type variables for the Protocol with proper variance
+# Properly variant type variables for the Protocol
 _Self_co = TypeVar("_Self_co", covariant=True)
 _K_contra = TypeVar("_K_contra", contravariant=True)
 _V_co = TypeVar("_V_co", covariant=True)
@@ -135,42 +137,62 @@ if TYPE_CHECKING:  # pragma: no cover
             self: _Self_co, key: _K_contra, default: _D_contra
         ) -> _V_co | _D_contra: ...
 
-else:
-    from typing import Protocol
 
-    class _CallableWithDefault(Protocol[_Self_co, _K_contra, _V_co, _D_contra]):
-        @overload
-        def __call__(self: _Self_co, key: _K_contra) -> _V_co: ...
+class _CallableWithDefaultImpl(Generic[_Self, _K, _V]):
+    """Implementation of the _CallableWithDefault protocol.
 
-        @overload
-        def __call__(
-            self: _Self_co, key: _K_contra, default: _D_contra
-        ) -> _V_co | _D_contra: ...
+    This works as a descriptor to properly bind to instances.
+    """
+
+    def __init__(self, method: Callable[[_Self, _K], _V]) -> None:
+        self._method = method
+        # Copy attributes manually since functools.update_wrapper doesn't work
+        # with our generic class
+        self.__name__ = getattr(method, "__name__", "<unknown>")
+        self.__doc__ = getattr(method, "__doc__", None)
+        module = getattr(method, "__module__", None)
+        if module is not None:
+            self.__module__ = module
+        self.__annotations__ = getattr(method, "__annotations__", {})
+
+    def __set_name__(self, owner: type, name: str) -> None:
+        self.__name__ = name
+
+    def __get__(
+        self, instance: _Self | None, owner: type[_Self] | None = None
+    ) -> _CallableWithDefault[_Self, _K, _V, _D]:
+        if instance is None:
+            return self  # type: ignore[return-value]
+        return _BoundCallableWithDefault(self._method, instance)
 
 
-def with_default(
-    meth: Callable[[_Self, _K], _V],
-) -> _CallableWithDefault[_Self, _K, _V, _D]:
-    """Add a default value argument to a method that can raise a `KeyError`."""
+class _BoundCallableWithDefault(Generic[_Self, _K, _V]):
+    """Bound method that implements the _CallableWithDefault protocol."""
+
+    def __init__(self, method: Callable[[_Self, _K], _V], instance: _Self) -> None:
+        self._method = method
+        self._instance = instance
 
     @overload
-    def wrapper(self: _Self, key: _K) -> _V: ...  # pragma: no cover
+    def __call__(self, key: _K) -> _V: ...
 
     @overload
-    def wrapper(self: _Self, key: _K, default: _D) -> _V | _D: ...  # pragma: no cover
+    def __call__(self, key: _K, default: _D) -> _V | _D: ...
 
-    @functools.wraps(meth)
-    def wrapper(
-        self: _Self, key: _K, default: _D | _NoDefault = _NO_DEFAULT
-    ) -> _V | _D:
+    def __call__(self, key: _K, default: _D | _NoDefault = _NO_DEFAULT) -> _V | _D:
         try:
-            return meth(self, key)
+            return self._method(self._instance, key)
         except KeyError:
             if default is _NO_DEFAULT:
                 raise
             return default  # type: ignore[return-value]
 
-    return cast("_CallableWithDefault[_Self, _K, _V, _D]", wrapper)
+
+def with_default(
+    meth: Callable[[_Self, _K], _V],
+) -> _CallableWithDefaultImpl[_Self, _K, _V]:
+    """Add a default value argument to a method that can raise a `KeyError`."""
+    return _CallableWithDefaultImpl(meth)
 
 
 class MultiMapping(Mapping[_K, _V]):
