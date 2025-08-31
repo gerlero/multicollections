@@ -48,7 +48,7 @@ _Self = TypeVar("_Self")
 class MultiMappingView(Generic[_K, _V], Sized):
     """Base class for MultiMapping views."""
 
-    def __init__(self, mapping: MultiMapping[_K, _V]) -> None:
+    def __init__(self, mapping: MultiMapping[_K, _V], /) -> None:
         """Initialize the view with the given mapping."""
         self._mapping = mapping
 
@@ -62,7 +62,7 @@ class KeysView(MultiMappingView[_K, _V], Collection[_K]):
     """View for the keys in a MultiMapping."""
 
     @override
-    def __contains__(self, key: object) -> bool:
+    def __contains__(self, key: object, /) -> bool:
         """Check if the key is in the multi-mapping."""
         return key in self._mapping
 
@@ -76,7 +76,7 @@ class ItemsView(MultiMappingView[_K, _V], Collection[Tuple[_K, _V]]):
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
-    def __contains__(self, item: object) -> bool:
+    def __contains__(self, item: object, /) -> bool:
         """Check if the item is in the multi-mapping."""
         try:
             key, value = item  # type: ignore[misc]
@@ -105,7 +105,7 @@ class ValuesView(MultiMappingView[_K, _V], Collection[_V]):
     """View for the values in a MultiMapping."""
 
     @override
-    def __contains__(self, value: object) -> bool:
+    def __contains__(self, value: object, /) -> bool:
         """Check if the value is in the mapping."""
         return any(v == value for v in self)
 
@@ -128,26 +128,27 @@ if TYPE_CHECKING:  # pragma: no cover
 
     class _CallableWithDefault(Protocol[_Self_co, _K_contra, _V_co]):
         @overload
-        def __call__(self: _Self_co, key: _K_contra) -> _V_co: ...
+        def __call__(self: _Self_co, key: _K_contra, /) -> _V_co: ...
 
         @overload
-        def __call__(self: _Self_co, key: _K_contra, default: _D) -> _V_co | _D: ...
+        def __call__(self: _Self_co, key: _K_contra, /, default: _D) -> _V_co | _D: ...
 
 
 def with_default(
     meth: Callable[[_Self, _K], _V],
+    /,
 ) -> _CallableWithDefault[_Self, _K, _V]:
     """Add a default value argument to a method that can raise a `KeyError`."""
 
     @overload
-    def wrapper(self: _Self, key: _K) -> _V: ...
+    def wrapper(self: _Self, key: _K, /) -> _V: ...
 
     @overload
-    def wrapper(self: _Self, key: _K, default: _D) -> _V | _D: ...
+    def wrapper(self: _Self, key: _K, /, default: _D) -> _V | _D: ...
 
     @functools.wraps(meth)  # type: ignore[misc]
     def wrapper(
-        self: _Self, key: _K, default: _D | _NoDefault = _NO_DEFAULT
+        self: _Self, key: _K, /, default: _D | _NoDefault = _NO_DEFAULT
     ) -> _V | _D:
         try:
             return meth(self, key)
@@ -168,7 +169,7 @@ class MultiMapping(Mapping[_K, _V]):
 
     @abstractmethod
     @with_default
-    def getall(self, key: _K) -> Collection[_V]:
+    def getall(self, key: _K, /) -> Collection[_V]:
         """Get all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -191,7 +192,7 @@ class MultiMapping(Mapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @with_default
-    def getone(self, key: _K) -> _V:
+    def getone(self, key: _K, /) -> _V:
         """Get the first value for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -203,7 +204,7 @@ class MultiMapping(Mapping[_K, _V]):
             raise RuntimeError(msg) from e
 
     @override
-    def __getitem__(self, key: _K) -> _V:
+    def __getitem__(self, key: _K, /) -> _V:
         """Get the first value for a key.
 
         Raises a `KeyError` if the key is not found.
@@ -234,7 +235,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
     @abstractmethod
     @override
-    def __setitem__(self, key: _K, value: _V) -> None:
+    def __setitem__(self, key: _K, value: _V, /) -> None:
         """Set the value for a key.
 
         If the key does not exist, it is added with the specified value.
@@ -245,13 +246,13 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    def add(self, key: _K, value: _V) -> None:
+    def add(self, key: _K, value: _V, /) -> None:
         """Add a new value for a key."""
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
     @with_default
-    def popone(self, key: _K) -> _V:
+    def popone(self, key: _K, /) -> _V:
         """Remove and return the first value for a key.
 
         Raises a `KeyError` if the key is not found.
@@ -259,7 +260,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @with_default
-    def popall(self, key: _K) -> Collection[_V]:
+    def popall(self, key: _K, /) -> Collection[_V]:
         """Remove and return all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -272,7 +273,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
     @with_default
     @override
-    def pop(self, key: _K) -> _V:
+    def pop(self, key: _K, /) -> _V:
         """Same as `popone`."""
         return self.popone(key)
 
@@ -284,7 +285,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         return key, value
 
     @override
-    def __delitem__(self, key: _K) -> None:
+    def __delitem__(self, key: _K, /) -> None:
         """Remove all values for a key.
 
         Raises a `KeyError` if the key is not found.
@@ -300,6 +301,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
     def extend(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        /,
         **kwargs: _V,
     ) -> None:
         """Extend the multi-mapping with items from another object."""
@@ -311,6 +313,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
     def merge(
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        /,
         **kwargs: _V,
     ) -> None:
         """Merge another object into the multi-mapping.
@@ -328,6 +331,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
     def update(  # type: ignore[override]
         self,
         other: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (),
+        /,
         **kwargs: _V,
     ) -> None:
         """Update the multi-mapping with items from another object.
