@@ -121,7 +121,7 @@ class _NoDefault:
 
 _NO_DEFAULT = _NoDefault()
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     _Self_co = TypeVar("_Self_co", covariant=True)
     _K_contra = TypeVar("_K_contra", contravariant=True)
     _V_co = TypeVar("_V_co", covariant=True)
