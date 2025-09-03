@@ -18,7 +18,7 @@ else:
         Sequence,
     )
 
-from multicollections._util import override
+from multicollections._typing import override
 from multicollections.abc import MutableMultiMapping, with_default
 
 _K = TypeVar("_K")
