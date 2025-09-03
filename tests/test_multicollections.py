@@ -3,6 +3,7 @@ from __future__ import annotations
 import sys
 from typing import TYPE_CHECKING
 
+import multicollections
 import multidict
 import pytest
 from multicollections import MultiDict
@@ -11,6 +12,10 @@ from .minimalimpl import ListMultiDict
 
 if TYPE_CHECKING:
     from multicollections.abc import MutableMultiMapping
+
+
+def test_has_version() -> None:
+    assert hasattr(multicollections, "__version__")
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])

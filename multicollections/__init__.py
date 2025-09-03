@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import importlib
 import sys
 from typing import TypeVar
 
@@ -12,6 +13,9 @@ else:
 
 from ._typing import SupportsKeysAndGetItem, override
 from .abc import MutableMultiMapping, _yield_items, with_default
+
+__version__ = importlib.metadata.version("multicollections")
+
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
