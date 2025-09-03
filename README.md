@@ -21,7 +21,7 @@ A fully generic [`MultiDict`](https://multicollections.readthedocs.io/en/latest/
 - **⚡ Type-safe**: Fully typed with generics
 - **🪶 Lightweight**: Zero dependencies, pure Python implementation
 - **🎯 Rich, compatible API**: Implements the [`multidict` API](https://multidict.aio-libs.org/en/stable/multidict/#multidict)
-- **📐 Abstract base classes**: The [`multicollections.abc`](https://multicollections.readthedocs.io/en/latest/api/abc/) module provides a common interface for other custom multi-value collections
+- **📐 Abstract base classes**: The [`multicollections.abc`](https://multicollections.readthedocs.io/en/stable/api/abc/) module provides a common interface for other custom multi-value collections
 
 ## 📦 Installation
 
@@ -85,14 +85,14 @@ mixed = MultiDict([('a', 1), ('b', 2)], c=3, d=4)
 
 ## 📖 Why MultiDict?
 
-Standard Python dictionaries can only hold one value per key. When you need to handle data formats that naturally allow multiple values for the same key, [`MultiDict`](https://multicollections.readthedocs.io/en/latest/api/multicollections/) is the perfect solution:
+Standard Python dictionaries can only hold one value per key. When you need to handle data formats that naturally allow multiple values for the same key, [`MultiDict`](https://multicollections.readthedocs.io/en/stable/api/multicollections/) is the perfect solution:
 
 - **HTTP headers**: Multiple `Accept` or `Set-Cookie` headers
 - **URL query parameters**: `?tag=python&tag=web&tag=api`
 - **Form data**: Multiple form fields with the same name
 - **Configuration files**: Multiple values for the same configuration key
 
-As opposed to the popular [`multidict`](https://github.com/aio-libs/multidict) package, `multicollections`'s [`MultiDict`](https://multicollections.readthedocs.io/en/latest/api/multicollections/) implementation allows both keys and values to be of any type, providing greater flexibility.
+As opposed to the popular [`multidict`](https://github.com/aio-libs/multidict) package, `multicollections`'s [`MultiDict`](https://multicollections.readthedocs.io/en/stable/api/multicollections/) implementation allows both keys and values to be of any type, providing greater flexibility.
 
 ## 🔗 Documentation
 
