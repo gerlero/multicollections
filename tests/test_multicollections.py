@@ -6,9 +6,10 @@ import multicollections
 import multidict
 import pytest
 from multicollections import MultiDict
+from multicollections._typing import SupportsKeysAndGetItem
 from multicollections.abc import MutableMultiMapping
 
-from .minimalimpl import ListMultiDict
+from .minimalimpl import BasicDictWrapper, ListMultiDict
 
 
 def test_has_version() -> None:
@@ -629,6 +630,16 @@ def test_update_method(cls: type[MutableMultiMapping[str, int]]) -> None:
     assert md4["b"] == 2  # Unchanged
     assert md4["c"] == 3  # New key added
     assert md4.getall("a") == [999, 4]  # Both 'a' values present
+
+    if cls is not multidict.MultiDict:  # type: ignore [comparison-overlap]
+        # Test updating with an object with just keys() and __getitem__()
+        md5 = cls([("a", 1)])  # type: ignore[call-arg]
+        other = BasicDictWrapper({"a": 999, "b": 2})
+        assert isinstance(other, SupportsKeysAndGetItem)
+        md5.update(other)
+        assert len(md5) == 2
+        assert md5["a"] == 999  # Replaced
+        assert md5["b"] == 2  # New key added
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
