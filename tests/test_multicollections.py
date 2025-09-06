@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING
 
 import multicollections
 import multidict
@@ -10,9 +9,6 @@ from multicollections import MultiDict
 from multicollections.abc import MutableMultiMapping
 
 from .minimalimpl import ListMultiDict
-
-if TYPE_CHECKING:
-    pass
 
 
 def test_has_version() -> None:
