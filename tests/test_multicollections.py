@@ -1,21 +1,25 @@
 from __future__ import annotations
 
 import sys
-from typing import TYPE_CHECKING
 
 import multicollections
 import multidict
 import pytest
 from multicollections import MultiDict
+from multicollections.abc import MutableMultiMapping
 
 from .minimalimpl import ListMultiDict
-
-if TYPE_CHECKING:
-    from multicollections.abc import MutableMultiMapping
 
 
 def test_has_version() -> None:
     assert hasattr(multicollections, "__version__")
+
+
+def test_external_implements_abc() -> None:
+    """Test that multidict.MultiDict is registered as implementing our
+    abc.MutableMultiMapping interface."""
+    md = multidict.MultiDict([("a", 1), ("b", 2)])
+    assert isinstance(md, MutableMultiMapping)
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
