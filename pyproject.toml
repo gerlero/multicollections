@@ -37,7 +37,7 @@ Documentation = "https://multicollections.readthedocs.io"
 lint = ["ruff"]
 typing = [
     "mypy>=1.4.1,<2",
-    "typing_extensions >= 4.4.0; python_version<'3.12'"
+    "typing_extensions>=4.4.0,<5; python_version<'3.12'"
 ]
 test = [
     "multidict>=6,<7",
