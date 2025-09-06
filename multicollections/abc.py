@@ -340,7 +340,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
 try:
     import multidict
-except ImportError:
+except ImportError:  # pragma: no cover
     pass
 else:
     MutableMultiMapping.register(multidict.MultiDict)
