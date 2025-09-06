@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import TypeVar
+from typing import Generic, TypeVar
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
@@ -85,3 +85,14 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
     @override
     def __len__(self) -> int:
         return len(self._items)
+
+
+class BasicDictWrapper(Generic[_K, _V]):
+    def __init__(self, data: dict[_K, _V]) -> None:
+        self._data = data
+
+    def keys(self) -> Iterable[_K]:
+        return self._data.keys()
+
+    def __getitem__(self, key: _K, /) -> _V:
+        return self._data[key]
