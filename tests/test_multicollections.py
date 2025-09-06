@@ -1011,45 +1011,43 @@ def test_process_updates_edge_cases() -> None:
     assert md["b"] == 2
 
 
-def test_multidict_equality() -> None:
+def test_multidict_equality() -> None:  # noqa: PLR0915
     """Test MultiDict.__eq__ against different types."""
     # Create test data
     md1 = MultiDict([("a", 1), ("b", 2), ("a", 3)])
     md2 = MultiDict([("a", 1), ("b", 2), ("a", 3)])  # Same content
     md3 = MultiDict([("a", 1), ("b", 2)])  # Different content
     md4 = MultiDict([("b", 2), ("a", 1), ("a", 3)])  # Different order
-    
+
     # Test MultiDict vs MultiDict
     assert md1 == md2  # Same content
-    assert not (md1 == md3)  # Different content
-    assert not (md1 == md4)  # Different order
-    
+    assert md1 != md3  # Different content
+    assert md1 != md4  # Different order
+
     # Test with empty MultiDicts
     empty1 = MultiDict()
     empty2 = MultiDict()
     assert empty1 == empty2
-    assert not (md1 == empty1)
-    
+    assert md1 != empty1
+
     # Test MultiDict vs multidict.MultiDict
-    import multidict
     mdict1 = multidict.MultiDict([("a", 1), ("b", 2), ("a", 3)])
     mdict2 = multidict.MultiDict([("a", 1), ("b", 2)])
     mdict3 = multidict.MultiDict([("b", 2), ("a", 1), ("a", 3)])  # Different order
-    
+
     assert md1 == mdict1  # Same content and order
-    assert not (md1 == mdict2)  # Different content 
-    assert not (md1 == mdict3)  # Different order
-    
+    assert md1 != mdict2  # Different content
+    assert md1 != mdict3  # Different order
+
     # Test MultiDict vs other MultiMapping (ListMultiDict)
-    from .minimalimpl import ListMultiDict
     lmd1 = ListMultiDict([("a", 1), ("b", 2), ("a", 3)])
     lmd2 = ListMultiDict([("a", 1), ("b", 2)])
     lmd3 = ListMultiDict([("b", 2), ("a", 1), ("a", 3)])  # Different order
-    
+
     assert md1 == lmd1  # Same content and order
-    assert not (md1 == lmd2)  # Different content
-    assert not (md1 == lmd3)  # Different order
-    
+    assert md1 != lmd2  # Different content
+    assert md1 != lmd3  # Different order
+
     # Test MultiDict vs regular dict
     # For dict comparison, ALL items in MultiDict must match the dict value for each key
     md_no_dups = MultiDict([("a", 1), ("b", 2)])  # No duplicate keys
@@ -1057,41 +1055,41 @@ def test_multidict_equality() -> None:
     dict2 = {"a": 3, "b": 2}  # Different value for "a"
     dict3 = {"a": 1, "b": 2, "c": 4}  # Extra key
     dict4 = {"a": 1}  # Missing key
-    
+
     assert md_no_dups == dict1  # Same content, no duplicates
-    assert not (md_no_dups == dict2)  # Different value for "a"
-    assert not (md_no_dups == dict3)  # Different length
-    assert not (md_no_dups == dict4)  # Different length
-    
+    assert md_no_dups != dict2  # Different value for "a"
+    assert md_no_dups != dict3  # Different length
+    assert md_no_dups != dict4  # Different length
+
     # MultiDict with duplicates vs dict - fails because of length mismatch
-    assert not (md1 == dict1)  # md1 has len=3, dict1 has len=2
-    
+    assert md1 != dict1  # md1 has len=3, dict1 has len=2
+
     # Test edge case: dict with key not in MultiDict
     md_partial = MultiDict([("a", 1)])
     dict_with_missing = {"b": 2}
-    assert not (md_partial == dict_with_missing)  # KeyError case
-    
+    assert md_partial != dict_with_missing  # KeyError case
+
     # Test MultiDict vs non-mapping types (should return NotImplemented from __eq__)
     assert md1.__eq__("string") is NotImplemented
     assert md1.__eq__(42) is NotImplemented
     assert md1.__eq__([1, 2, 3]) is NotImplemented
     assert md1.__eq__(None) is NotImplemented
-    
+
     # But == operator returns False after trying both directions
     assert (md1 == "string") is False
     assert (md1 == 42) is False
     assert (md1 == [1, 2, 3]) is False
-    assert (md1 == None) is False
-    
+    assert (md1 is None) is False
+
     # Test empty dict vs empty MultiDict
     empty_dict = {}
     assert empty1 == empty_dict
-    
+
     # Test edge cases with special values
     md_special = MultiDict([("a", None), ("b", 0), ("c", "")])
     dict_special = {"a": None, "b": 0, "c": ""}
     assert md_special == dict_special
-    
+
     # Test case where MultiMapping comparison fails due to different lengths
     lmd_shorter = ListMultiDict([("a", 1)])
-    assert not (md1 == lmd_shorter)  # Different lengths
+    assert md1 != lmd_shorter  # Different lengths
