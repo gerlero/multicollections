@@ -1,6 +1,13 @@
 from __future__ import annotations
 
 import sys
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    if sys.version_info >= (3, 9):
+        from collections.abc import MutableMapping
+    else:
+        from typing import MutableMapping
 
 import multicollections
 import multidict
@@ -631,15 +638,17 @@ def test_update_method(cls: type[MutableMultiMapping[str, int]]) -> None:
     assert md4["c"] == 3  # New key added
     assert md4.getall("a") == [999, 4]  # Both 'a' values present
 
-    if cls is not multidict.MultiDict:  # type: ignore [comparison-overlap]
-        # Test updating with an object with just keys() and __getitem__()
-        md5 = cls([("a", 1)])  # type: ignore[call-arg]
-        other = BasicDictWrapper({"a": 999, "b": 2})
-        assert isinstance(other, SupportsKeysAndGetItem)
-        md5.update(other)
-        assert len(md5) == 2
-        assert md5["a"] == 999  # Replaced
-        assert md5["b"] == 2  # New key added
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, dict])
+def test_update_method_protocol(cls: type[MutableMapping[str, int]]) -> None:
+    """Test updating with an object with just keys() and __getitem__()."""
+    d = cls([("a", 1)])  # type: ignore[call-arg]
+    other = BasicDictWrapper({"a": 999, "b": 2})
+    assert isinstance(other, SupportsKeysAndGetItem)
+    d.update(other)
+    assert len(d) == 2
+    assert d["a"] == 999  # Replaced
+    assert d["b"] == 2  # New key added
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
