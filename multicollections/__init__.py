@@ -7,12 +7,12 @@ import sys
 from typing import TypeVar
 
 if sys.version_info >= (3, 9):
-    from collections.abc import Iterable, Iterator
+    from collections.abc import Iterable, Iterator, Mapping
 else:
-    from typing import Iterable, Iterator
+    from typing import Iterable, Iterator, Mapping
 
 from ._typing import SupportsKeysAndGetItem, override
-from .abc import MutableMultiMapping, _yield_items, with_default
+from .abc import MultiMapping, MutableMultiMapping, _yield_items, with_default
 
 __version__ = importlib.metadata.version("multicollections")
 
@@ -21,7 +21,7 @@ _K = TypeVar("_K")
 _V = TypeVar("_V")
 
 
-class MultiDict(MutableMultiMapping[_K, _V]):
+class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
     """A fully generic dictionary that allows multiple values with the same key.
 
     Preserves insertion order.
@@ -295,6 +295,36 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         new_md._items = self._items.copy()  # noqa: SLF001
         new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}  # noqa: SLF001
         return new_md
+
+    @override
+    def __eq__(self, other: object) -> bool:  # noqa: PLR0911
+        """Check equality with another MultiDict or mapping-like object.
+
+        Two `MultiDict` instances (or a `MultiDict` and any `MultiMapping`) are
+        considered equal if they contain the same items (including duplicates) in the
+        same order.
+
+        For comparison with another `Mapping` object, it is equal if they are the same
+        length and for each item in the `MultiDict`, the corresponding key in the
+        `Mapping` has the same value.
+        """
+        if isinstance(other, MultiDict):
+            return self._items == other._items
+        if isinstance(other, MultiMapping):
+            return len(self._items) == len(other) and all(
+                i1 == i2 for i1, i2 in zip(self._items, other.items())
+            )
+        if isinstance(other, Mapping):
+            if len(self) != len(other):
+                return False
+            try:
+                for k, v in self._items:
+                    if other[k] != v:
+                        return False
+            except KeyError:
+                return False
+            return True
+        return NotImplemented
 
     @override
     def __repr__(self) -> str:
