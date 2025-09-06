@@ -19,8 +19,9 @@ def test_has_version() -> None:
     assert hasattr(multicollections, "__version__")
 
 
-def test_multidict_implements_mutable_multi_mapping() -> None:
-    """Test that multidict.MultiDict implements abc.MutableMultiMapping."""
+def test_external_implements_abc() -> None:
+    """Test that multidict.MultiDict is registered as implementing our
+    abc.MutableMultiMapping interface."""
     md = multidict.MultiDict([("a", 1), ("b", 2)])
     assert isinstance(md, MutableMultiMapping)
 
