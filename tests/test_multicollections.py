@@ -7,15 +7,22 @@ import multicollections
 import multidict
 import pytest
 from multicollections import MultiDict
+from multicollections.abc import MutableMultiMapping
 
 from .minimalimpl import ListMultiDict
 
 if TYPE_CHECKING:
-    from multicollections.abc import MutableMultiMapping
+    pass
 
 
 def test_has_version() -> None:
     assert hasattr(multicollections, "__version__")
+
+
+def test_multidict_implements_mutable_multi_mapping() -> None:
+    """Test that multidict.MultiDict implements abc.MutableMultiMapping."""
+    md = multidict.MultiDict([("a", 1), ("b", 2)])
+    assert isinstance(md, MutableMultiMapping)
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
