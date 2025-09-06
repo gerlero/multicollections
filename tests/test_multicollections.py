@@ -1025,8 +1025,8 @@ def test_multidict_equality() -> None:  # noqa: PLR0915
     assert md1 != md4  # Different order
 
     # Test with empty MultiDicts
-    empty1 = MultiDict()
-    empty2 = MultiDict()
+    empty1: MultiDict[None, None] = MultiDict()
+    empty2: MultiDict[None, None] = MultiDict()
     assert empty1 == empty2
     assert md1 != empty1
 
@@ -1040,9 +1040,11 @@ def test_multidict_equality() -> None:  # noqa: PLR0915
     assert md1 != mdict3  # Different order
 
     # Test MultiDict vs other MultiMapping (ListMultiDict)
-    lmd1 = ListMultiDict([("a", 1), ("b", 2), ("a", 3)])
-    lmd2 = ListMultiDict([("a", 1), ("b", 2)])
-    lmd3 = ListMultiDict([("b", 2), ("a", 1), ("a", 3)])  # Different order
+    lmd1: ListMultiDict[str, int] = ListMultiDict([("a", 1), ("b", 2), ("a", 3)])
+    lmd2: ListMultiDict[str, int] = ListMultiDict([("a", 1), ("b", 2)])
+    lmd3: ListMultiDict[str, int] = ListMultiDict(
+        [("b", 2), ("a", 1), ("a", 3)]  # Different order
+    )
 
     assert md1 == lmd1  # Same content and order
     assert md1 != lmd2  # Different content
@@ -1082,7 +1084,7 @@ def test_multidict_equality() -> None:  # noqa: PLR0915
     assert (md1 is None) is False
 
     # Test empty dict vs empty MultiDict
-    empty_dict = {}
+    empty_dict: dict[None, None] = {}
     assert empty1 == empty_dict
 
     # Test edge cases with special values
@@ -1091,5 +1093,5 @@ def test_multidict_equality() -> None:  # noqa: PLR0915
     assert md_special == dict_special
 
     # Test case where MultiMapping comparison fails due to different lengths
-    lmd_shorter = ListMultiDict([("a", 1)])
+    lmd_shorter: ListMultiDict[str, int] = ListMultiDict([("a", 1)])
     assert md1 != lmd_shorter  # Different lengths
