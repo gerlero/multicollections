@@ -336,3 +336,14 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
                 existing_keys.remove(key)
             else:
                 self.add(key, value)
+
+
+try:
+    import multidict
+except ImportError:
+    pass
+else:
+    MutableMultiMapping.register(multidict.MultiDict)
+    MutableMultiMapping.register(multidict.CIMultiDict)
+    MultiMapping.register(multidict.MultiDictProxy)
+    MultiMapping.register(multidict.CIMultiDictProxy)
