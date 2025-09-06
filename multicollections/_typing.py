@@ -14,9 +14,6 @@ else:
     try:
         from typing_extensions import override
     except ImportError:  # pragma: nocover
-        if TYPE_CHECKING:
-            raise
-
         def override(meth: Callable, /) -> Callable:
             """Fallback override decorator that does nothing."""
             return meth
