@@ -8,27 +8,33 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
-from typing import Generic, Tuple, TypeVar, overload
+from typing import Any, TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import (
         Callable,
         Collection,
+        ItemsView,
         Iterable,
         Iterator,
+        KeysView,
         Mapping,
+        MappingView,
         MutableMapping,
-        Sized,
+        ValuesView,
     )
 else:
     from typing import (
         Callable,
         Collection,
+        ItemsView,
         Iterable,
         Iterator,
+        KeysView,
         Mapping,
+        MappingView,
         MutableMapping,
-        Sized,
+        ValuesView,
     )
 
 from ._typing import MappingLike, MethodWithDefault, SupportsKeysAndGetItem, override
@@ -39,20 +45,22 @@ _D = TypeVar("_D")
 _Self = TypeVar("_Self")
 
 
-class MultiMappingView(Generic[_K, _V], Sized):
+class MultiMappingView(MappingView):
     """Base class for MultiMapping views."""
 
-    def __init__(self, mapping: MultiMapping[_K, _V], /) -> None:
+    _mapping: MultiMapping[Any, Any]
+
+    def __init__(self, mapping: MultiMapping[Any, Any], /) -> None:
         """Initialize the view with the given mapping."""
-        self._mapping = mapping
+        super().__init__(mapping)
 
     @override
     def __len__(self) -> int:
-        """Return the number of elements in the multi-mapping."""
+        """Return the number of items in the view."""
         return len(self._mapping)
 
 
-class KeysView(MultiMappingView[_K, _V], Collection[_K]):
+class KeysView(KeysView[_K], MultiMappingView):  # type: ignore[no-redef]
     """View for the keys in a MultiMapping."""
 
     @override
@@ -66,7 +74,7 @@ class KeysView(MultiMappingView[_K, _V], Collection[_K]):
         return iter(self._mapping)
 
 
-class ItemsView(MultiMappingView[_K, _V], Collection[Tuple[_K, _V]]):
+class ItemsView(ItemsView[_K, _V], MultiMappingView):  # type: ignore[no-redef]
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
@@ -95,7 +103,7 @@ class ItemsView(MultiMappingView[_K, _V], Collection[Tuple[_K, _V]]):
             counts[k] += 1
 
 
-class ValuesView(MultiMappingView[_K, _V], Collection[_V]):
+class ValuesView(ValuesView[_V], MultiMappingView):  # type: ignore[no-redef]
     """View for the values in a MultiMapping."""
 
     @override
@@ -207,17 +215,17 @@ class MultiMapping(Mapping[_K, _V]):
         return self.getone(key)
 
     @override
-    def keys(self) -> KeysView[_K, _V]:  # type: ignore[override]
+    def keys(self) -> KeysView[_K]:
         """Return a view of the keys in the MultiMapping."""
         return KeysView(self)
 
     @override
-    def items(self) -> ItemsView[_K, _V]:  # type: ignore[override]
+    def items(self) -> ItemsView[_K, _V]:
         """Return a view of the items (key-value pairs) in the MultiMapping."""
         return ItemsView(self)
 
     @override
-    def values(self) -> ValuesView[_K, _V]:  # type: ignore[override]
+    def values(self) -> ValuesView[_V]:
         """Return a view of the values in the MultiMapping."""
         return ValuesView(self)
 
