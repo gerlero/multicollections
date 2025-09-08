@@ -14,15 +14,15 @@ if sys.version_info >= (3, 9):
     from collections.abc import (
         Callable,
         Collection,
-        ItemsView,
         Iterable,
         Iterator,
-        KeysView,
         Mapping,
         MappingView,
         MutableMapping,
-        ValuesView,
     )
+    from collections.abc import ItemsView as MappingItemsView
+    from collections.abc import KeysView as MappingKeysView
+    from collections.abc import ValuesView as MappingValuesView
 else:
     from typing import (
         Callable,
@@ -36,6 +36,9 @@ else:
         MutableMapping,
         ValuesView,
     )
+    from typing import ItemsView as MappingItemsView
+    from typing import KeysView as MappingKeysView
+    from typing import ValuesView as MappingValuesView
 
 from ._typing import MappingLike, MethodWithDefault, SupportsKeysAndGetItem, override
 
@@ -60,7 +63,7 @@ class MultiMappingView(MappingView):
         return len(self._mapping)
 
 
-class KeysView(KeysView[_K], MultiMappingView):  # type: ignore[no-redef]
+class KeysView(MappingKeysView[_K], MultiMappingView):
     """View for the keys in a MultiMapping."""
 
     @override
@@ -74,7 +77,7 @@ class KeysView(KeysView[_K], MultiMappingView):  # type: ignore[no-redef]
         return iter(self._mapping)
 
 
-class ItemsView(ItemsView[_K, _V], MultiMappingView):  # type: ignore[no-redef]
+class ItemsView(MappingItemsView[_K, _V], MultiMappingView):
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
@@ -103,7 +106,7 @@ class ItemsView(ItemsView[_K, _V], MultiMappingView):  # type: ignore[no-redef]
             counts[k] += 1
 
 
-class ValuesView(ValuesView[_V], MultiMappingView):  # type: ignore[no-redef]
+class ValuesView(MappingValuesView[_V], MultiMappingView):
     """View for the values in a MultiMapping."""
 
     @override
