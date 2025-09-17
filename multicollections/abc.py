@@ -130,7 +130,7 @@ _NO_DEFAULT = _NoDefault()
 def with_default(
     meth: Callable[[_Self, _K], _V],
     /,
-) -> MethodWithDefault[_Self, _K, _V]:
+) -> MethodWithDefault[_K, _V]:
     """Add a default value argument to a method that can raise a `KeyError`."""
 
     @overload
