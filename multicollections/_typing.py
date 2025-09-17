@@ -20,18 +20,18 @@ else:
             return meth
 
 
-_Self_co = TypeVar("_Self_co", covariant=True)
+_Self = TypeVar("_Self")
 _K_contra = TypeVar("_K_contra", contravariant=True)
 _V_co = TypeVar("_V_co", covariant=True)
 _D = TypeVar("_D")
 
 
-class MethodWithDefault(Protocol[_Self_co, _K_contra, _V_co]):
+class MethodWithDefault(Protocol[_K_contra, _V_co]):
     @overload
-    def __call__(self: _Self_co, key: _K_contra, /) -> _V_co: ...
+    def __call__(self: _Self, key: _K_contra, /) -> _V_co: ...
 
     @overload
-    def __call__(self: _Self_co, key: _K_contra, /, default: _D) -> _V_co | _D: ...
+    def __call__(self: _Self, key: _K_contra, /, default: _D) -> _V_co | _D: ...
 
 
 _K = TypeVar("_K")
