@@ -313,7 +313,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
         if isinstance(other, MultiMapping):
             return len(self._items) == len(other) and all(  # ty: ignore[invalid-argument-type]
                 i1 == i2
-                for i1, i2 in zip(self._items, other.items())  # ty:ignore[invalid-argument-type]
+                for i1, i2 in zip(self._items, other.items())  # ty: ignore[invalid-argument-type]
             )
         if isinstance(other, Mapping):
             if len(self) != len(other):
