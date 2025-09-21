@@ -84,11 +84,11 @@ class ItemsView(MappingItemsView[_K, _V], MultiMappingView):
     def __contains__(self, item: object, /) -> bool:
         """Check if the item is in the multi-mapping."""
         try:
-            key, value = item  # type: ignore[misc]
+            key, value = item  # ty: ignore[not-iterable]
         except TypeError:
             return False
         try:
-            return value in self._mapping.getall(key)  # type: ignore[has-type]
+            return value in self._mapping.getall(key)
         except KeyError:
             return False
 
@@ -139,18 +139,18 @@ def with_default(
     @overload
     def wrapper(self: _Self, key: _K, /, default: _D) -> _V | _D: ...
 
-    @functools.wraps(meth)  # type: ignore[misc]
+    @functools.wraps(meth)
     def wrapper(
         self: _Self, key: _K, /, default: _D | _NoDefault = _NO_DEFAULT
     ) -> _V | _D:
         try:
             return meth(self, key)
         except KeyError:
-            if default is _NO_DEFAULT:
+            if isinstance(default, _NoDefault):
                 raise
-            return default  # type: ignore[return-value]
+            return default
 
-    return wrapper  # type: ignore[return-value]
+    return wrapper
 
 
 def _yield_items(
@@ -163,7 +163,7 @@ def _yield_items(
     else:
         yield from obj
 
-    yield from kwargs.items()  # type: ignore[misc]
+    yield from kwargs.items()
 
 
 class MultiMapping(Mapping[_K, _V]):
@@ -354,7 +354,7 @@ try:
 except ImportError:  # pragma: no cover
     pass
 else:
-    MutableMultiMapping.register(multidict.MultiDict)
-    MutableMultiMapping.register(multidict.CIMultiDict)
-    MultiMapping.register(multidict.MultiDictProxy)
-    MultiMapping.register(multidict.CIMultiDictProxy)
+    MutableMultiMapping.register(multidict.MultiDict)  # ty: ignore[unresolved-attribute]
+    MutableMultiMapping.register(multidict.CIMultiDict)  # ty: ignore[unresolved-attribute]
+    MultiMapping.register(multidict.MultiDictProxy)  # ty: ignore[unresolved-attribute]
+    MultiMapping.register(multidict.CIMultiDictProxy)  # ty: ignore[unresolved-attribute]

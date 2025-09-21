@@ -32,12 +32,12 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
         self._items: list[tuple[_K, _V]] = []
         if isinstance(iterable, Mapping):
             for key, value in iterable.items():
-                self._items.append((key, value))
+                self._items.append((key, value))  # ty: ignore[invalid-argument-type]
         else:
             for key, value in iterable:
-                self._items.append((key, value))  # type: ignore[arg-type]
+                self._items.append((key, value))  # ty: ignore[invalid-argument-type]
         for key, value in kwargs.items():
-            self._items.append((key, value))  # type: ignore[arg-type]
+            self._items.append((key, value))  # ty: ignore[invalid-argument-type]
 
     @override
     @with_default

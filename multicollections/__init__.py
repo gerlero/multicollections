@@ -71,7 +71,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
             if len(indices) > 1:
                 # Remove duplicates efficiently by marking items as None and filtering
                 for idx in indices[1:]:
-                    self._items[idx] = None  # type: ignore[call-overload]
+                    self._items[idx] = None
 
                 # Filter out None items and rebuild indices
                 self._items = [item for item in self._items if item is not None]
@@ -108,7 +108,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
         value = self._items[first_index][1]
 
         # Mark the first item for removal
-        self._items[first_index] = None  # type: ignore[call-overload]
+        self._items[first_index] = None
 
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
@@ -127,7 +127,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
 
         # Mark items for removal
         for idx in indices_to_remove:
-            self._items[idx] = None  # type: ignore[call-overload]
+            self._items[idx] = None
 
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
@@ -180,7 +180,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
 
         # Mark items for removal
         for idx in items_to_remove:
-            self._items[idx] = None  # type: ignore[call-overload]
+            self._items[idx] = None
 
         # Filter out None items
         self._items = [item for item in self._items if item is not None]
@@ -311,8 +311,9 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
         if isinstance(other, MultiDict):
             return self._items == other._items
         if isinstance(other, MultiMapping):
-            return len(self._items) == len(other) and all(
-                i1 == i2 for i1, i2 in zip(self._items, other.items())
+            return len(self._items) == len(other) and all(  # ty: ignore[invalid-argument-type]
+                i1 == i2
+                for i1, i2 in zip(self._items, other.items())  # ty:ignore[invalid-argument-type]
             )
         if isinstance(other, Mapping):
             if len(self) != len(other):
