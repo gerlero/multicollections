@@ -59,14 +59,6 @@ dev = [
 [tool.uv.build-backend]
 module-root = "."
 
-[tool.mypy]
-packages = [
-    "multicollections",
-    "tests",
-]
-strict = true
-enable_error_code = "explicit-override"
-
 [tool.ruff.lint]
 extend-select = ["ALL"]
 extend-ignore = ["COM812"]
