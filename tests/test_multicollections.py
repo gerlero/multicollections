@@ -256,7 +256,7 @@ def test_items_view_contains(
     assert ("b", 1) not in items  # Wrong value for existing key
 
     # Test different type
-    assert None not in items  # type: ignore[operator]
+    assert None not in items
 
     # Test empty case
     empty_md = cls()
