@@ -71,7 +71,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
             if len(indices) > 1:
                 # Remove duplicates efficiently by marking items as None and filtering
                 for idx in indices[1:]:
-                    self._items[idx] = None
+                    self._items[idx] = None  # ty: ignore[invalid-assignment]
 
                 # Filter out None items and rebuild indices
                 self._items = [item for item in self._items if item is not None]
@@ -108,7 +108,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
         value = self._items[first_index][1]
 
         # Mark the first item for removal
-        self._items[first_index] = None
+        self._items[first_index] = None  # type: ignore[invalid-assignment]
 
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
@@ -127,7 +127,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
 
         # Mark items for removal
         for idx in indices_to_remove:
-            self._items[idx] = None
+            self._items[idx] = None  # type: ignore[invalid-assignment]
 
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
@@ -180,7 +180,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
 
         # Mark items for removal
         for idx in items_to_remove:
-            self._items[idx] = None
+            self._items[idx] = None  # type: ignore[invalid-assignment]
 
         # Filter out None items
         self._items = [item for item in self._items if item is not None]
