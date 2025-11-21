@@ -40,7 +40,7 @@ typing = [
 ]
 test = [
     "multidict>=6,<7",
-    "pytest>=7,<9",
+    "pytest>=7,<10",
     "pytest-cov"
 ]
 docs = [
