@@ -218,17 +218,17 @@ class MultiMapping(Mapping[_K, _V]):
         return self.getone(key)
 
     @override
-    def keys(self) -> KeysView[_K]:
+    def keys(self) -> KeysView[_K]:  # ty: ignore[invalid-type-form]
         """Return a view of the keys in the MultiMapping."""
         return KeysView(self)
 
     @override
-    def items(self) -> ItemsView[_K, _V]:
+    def items(self) -> ItemsView[_K, _V]:  # ty: ignore[invalid-type-form]
         """Return a view of the items (key-value pairs) in the MultiMapping."""
         return ItemsView(self)
 
     @override
-    def values(self) -> ValuesView[_V]:
+    def values(self) -> ValuesView[_V]:  # ty: ignore[invalid-type-form]
         """Return a view of the values in the MultiMapping."""
         return ValuesView(self)
 
