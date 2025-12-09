@@ -150,7 +150,7 @@ def with_default(
                 raise
             return default
 
-    return wrapper
+    return wrapper  # ty: ignore[invalid-return-type]
 
 
 def _yield_items(
