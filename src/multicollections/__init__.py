@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import importlib.metadata
 import sys
-from typing import TypeVar
+from typing import TypeVar, overload
 
 if sys.version_info >= (3, 9):
     from collections.abc import Iterable, Iterator, Mapping
@@ -19,6 +19,7 @@ __version__ = importlib.metadata.version("multicollections")
 
 _K = TypeVar("_K")
 _V = TypeVar("_V")
+_D = TypeVar("_D")
 
 
 class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
@@ -73,6 +74,52 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
         if (indices := self._key_indices.get(key)) is None:
             raise KeyError(key)
         return self._items[indices[0]][1]
+
+    @override
+    def __contains__(self, key: object, /) -> bool:
+        """Check if a key exists in the multi-mapping.
+
+        This is optimized to directly check the key indices without
+        calling __getitem__, avoiding exception handling overhead.
+        """
+        return key in self._key_indices
+
+    @overload
+    def get(self, key: _K, /) -> _V | None: ...
+
+    @overload
+    def get(self, key: _K, default: _D, /) -> _V | _D: ...
+
+    @override
+    def get(self, key: _K, default: _D | None = None, /) -> _V | _D | None:
+        """Get the first value for a key, or a default value if not found.
+
+        This is optimized to directly check the key indices without
+        calling __getitem__, avoiding exception handling overhead.
+        """
+        if (indices := self._key_indices.get(key)) is None:
+            return default
+        return self._items[indices[0]][1]
+
+    @overload
+    def setdefault(self, key: _K, /) -> _V | None: ...
+
+    @overload
+    def setdefault(self, key: _K, default: _D, /) -> _V | _D: ...
+
+    @override
+    def setdefault(self, key: _K, default: _D | None = None, /) -> _V | _D | None:
+        """Get the first value for a key, or set and return a default if not found.
+
+        This is optimized to perform a single lookup in the key indices,
+        rather than calling __getitem__ and __setitem__ separately.
+        """
+        if (indices := self._key_indices.get(key)) is not None:
+            # Key exists, return its first value
+            return self._items[indices[0]][1]
+        # Key doesn't exist, add it with the default value
+        self.add(key, default)
+        return default
 
     @override
     def __setitem__(self, key: _K, value: _V, /) -> None:
