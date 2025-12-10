@@ -54,6 +54,16 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
         return ret
 
     @override
+    def __getitem__(self, key: _K, /) -> _V:
+        """Get the first value for a key.
+
+        Raises a `KeyError` if the key is not found.
+        """
+        if (indices := self._key_indices.get(key)) is None:
+            raise KeyError(key)
+        return self._items[indices[0]][1]
+
+    @override
     def __setitem__(self, key: _K, value: _V, /) -> None:
         """Set the value for a key.
 
