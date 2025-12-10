@@ -166,17 +166,33 @@ def test_optimized_methods_consistency() -> None:
     """Test that optimized methods are consistent with other MultiDict operations."""
     md: MultiDict[str, int] = MultiDict([("a", 1), ("b", 2), ("a", 3)])
     
-    # __contains__ consistency with __getitem__
+    # __contains__ consistency: should match whether __getitem__ would succeed
     for key in ["a", "b"]:
-        assert (key in md) == (md.get(key) is not None)
+        assert key in md
+        try:
+            _ = md[key]
+            key_accessible = True
+        except KeyError:
+            key_accessible = False
+        assert (key in md) == key_accessible
     
-    assert ("missing" in md) == (md.get("missing") is not None)
+    assert "missing" not in md
+    try:
+        _ = md["missing"]
+        missing_accessible = True
+    except KeyError:
+        missing_accessible = False
+    assert ("missing" in md) == missing_accessible
     
-    # get consistency with __getitem__
+    # get consistency with __getitem__ for existing keys
     assert md.get("a") == md["a"]
     assert md.get("b") == md["b"]
     
-    # setdefault consistency with add
+    # get returns default for missing keys (doesn't raise KeyError like __getitem__)
+    assert md.get("missing") is None
+    assert md.get("missing", "default") == "default"
+    
+    # setdefault consistency with add for new keys
     md_test: MultiDict[str, int] = MultiDict()
     md_test.setdefault("x", 10)
     assert md_test["x"] == 10
