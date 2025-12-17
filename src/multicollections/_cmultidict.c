@@ -49,8 +49,9 @@ rebuild_indices_c(PyObject *self, PyObject *args)
                 Py_DECREF(indices_dict);
                 return NULL;
             }
-            Py_DECREF(indices_list);
-            indices_list = PyDict_GetItem(indices_dict, key);  /* Get borrowed ref */
+            /* After PyDict_SetItem, we need a borrowed ref for the appending below */
+            Py_DECREF(indices_list);  /* Release our owned reference */
+            indices_list = PyDict_GetItem(indices_dict, key);  /* Get borrowed ref from dict */
         }
 
         PyObject *index_obj = PyLong_FromSsize_t(i);
