@@ -19,7 +19,8 @@ A fully generic [`MultiDict`](https://multicollections.readthedocs.io/en/latest/
 - **🧩 Fully generic**: Accepts any types for both keys and values
 - **✅ Thoroughly tested**: 100% code coverage
 - **⚡ Type-safe**: Fully typed with generics
-- **🪶 Lightweight**: Zero dependencies, pure Python implementation
+- **🪶 Lightweight**: Zero dependencies, pure Python implementation with optional C extension for performance
+- **🚀 High performance**: Optional C extension provides ~30% performance boost for index operations
 - **🎯 Rich, compatible API**: Implements the [`multidict` API](https://multidict.aio-libs.org/en/stable/multidict/#multidict)
 - **📐 Abstract base classes**: The [`multicollections.abc`](https://multicollections.readthedocs.io/en/stable/api/abc/) module provides a common interface for other custom multi-value collections
 
