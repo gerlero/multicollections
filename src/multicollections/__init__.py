@@ -14,6 +14,13 @@ else:
 from ._typing import SupportsKeysAndGetItem, override
 from .abc import MultiMapping, MutableMultiMapping, _yield_items, with_default
 
+# Try to import C extension for performance, fall back to pure Python if not available
+try:
+    from . import _cmultidict
+    _rebuild_indices_c = _cmultidict.rebuild_indices
+except ImportError:
+    _rebuild_indices_c = None
+
 __version__ = importlib.metadata.version("multicollections")
 
 
@@ -150,11 +157,16 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
 
     def _rebuild_indices(self) -> None:
         """Rebuild the key indices after items list has been modified."""
-        self._key_indices = {}
-        for i, (key, _) in enumerate(self._items):
-            if (indices_list := self._key_indices.get(key)) is None:
-                self._key_indices[key] = indices_list = []
-            indices_list.append(i)
+        if _rebuild_indices_c is not None:
+            # Use optimized C implementation
+            self._key_indices = _rebuild_indices_c(self._items)
+        else:
+            # Fall back to pure Python implementation
+            self._key_indices = {}
+            for i, (key, _) in enumerate(self._items):
+                if (indices_list := self._key_indices.get(key)) is None:
+                    self._key_indices[key] = indices_list = []
+                indices_list.append(i)
 
     @override
     def add(self, key: _K, value: _V, /) -> None:
