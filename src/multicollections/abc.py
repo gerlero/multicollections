@@ -159,7 +159,7 @@ def _yield_items(
     if isinstance(obj, MappingLike):
         yield from obj.items()
     elif isinstance(obj, SupportsKeysAndGetItem):
-        yield from ((k, obj[k]) for k in obj.keys())  # noqa: SIM118
+        yield from ((k, obj[k]) for k in obj.keys())  # noqa: SIM118  # ty: ignore[invalid-argument-type]
     else:
         yield from obj
 
@@ -218,17 +218,17 @@ class MultiMapping(Mapping[_K, _V]):
         return self.getone(key)
 
     @override
-    def keys(self) -> KeysView[_K]:  # ty: ignore[invalid-type-form]
+    def keys(self) -> KeysView[_K]:
         """Return a view of the keys in the MultiMapping."""
         return KeysView(self)
 
     @override
-    def items(self) -> ItemsView[_K, _V]:  # ty: ignore[invalid-type-form]
+    def items(self) -> ItemsView[_K, _V]:
         """Return a view of the items (key-value pairs) in the MultiMapping."""
         return ItemsView(self)
 
     @override
-    def values(self) -> ValuesView[_V]:  # ty: ignore[invalid-type-form]
+    def values(self) -> ValuesView[_V]:
         """Return a view of the values in the MultiMapping."""
         return ValuesView(self)
 

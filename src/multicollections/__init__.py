@@ -176,7 +176,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
         value = self._items[first_index][1]
 
         # Mark the first item for removal
-        self._items[first_index] = None  # type: ignore[invalid-assignment]
+        self._items[first_index] = None  # ty: ignore[invalid-assignment]
 
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
@@ -195,7 +195,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
 
         # Mark items for removal
         for idx in indices_to_remove:
-            self._items[idx] = None  # type: ignore[invalid-assignment]
+            self._items[idx] = None  # ty: ignore[invalid-assignment]
 
         # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
@@ -248,7 +248,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
 
         # Mark items for removal
         for idx in items_to_remove:
-            self._items[idx] = None  # type: ignore[invalid-assignment]
+            self._items[idx] = None  # ty: ignore[invalid-assignment]
 
         # Filter out None items
         self._items = [item for item in self._items if item is not None]
@@ -379,16 +379,15 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
         if isinstance(other, MultiDict):
             return self._items == other._items
         if isinstance(other, MultiMapping):
-            return len(self._items) == len(other) and all(  # ty: ignore[invalid-argument-type]
-                i1 == i2
-                for i1, i2 in zip(self._items, other.items())  # ty: ignore[invalid-argument-type]
+            return len(self._items) == len(other) and all(
+                i1 == i2 for i1, i2 in zip(self._items, other.items())
             )
         if isinstance(other, Mapping):
             if len(self) != len(other):
                 return False
             try:
                 for k, v in self._items:
-                    if other[k] != v:
+                    if other[k] != v:  # ty: ignore[invalid-argument-type]
                         return False
             except KeyError:
                 return False
