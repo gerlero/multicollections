@@ -8,14 +8,12 @@ if sys.version_info >= (3, 9):
         Iterable,
         Iterator,
         Mapping,
-        Sequence,
     )
 else:
     from typing import (
         Iterable,
         Iterator,
         Mapping,
-        Sequence,
     )
 
 from multicollections._typing import override
@@ -27,7 +25,7 @@ _V = TypeVar("_V")
 
 class ListMultiDict(MutableMultiMapping[_K, _V]):
     def __init__(
-        self, iterable: Mapping[_K, _V] | Iterable[Sequence[_K | _V]] = (), **kwargs: _V
+        self, iterable: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (), **kwargs: _V
     ) -> None:
         self._items: list[tuple[_K, _V]] = []
         if isinstance(iterable, Mapping):
@@ -35,7 +33,7 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
                 self._items.append((key, value))  # ty: ignore[invalid-argument-type]
         else:
             for key, value in iterable:
-                self._items.append((key, value))  # ty: ignore[invalid-argument-type]
+                self._items.append((key, value))
         for key, value in kwargs.items():
             self._items.append((key, value))  # ty: ignore[invalid-argument-type]
 
