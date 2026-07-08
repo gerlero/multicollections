@@ -120,11 +120,14 @@ class ValuesView(MappingValuesView[_V], MultiMappingView):
         yield from (v for _, v in self._mapping.items())
 
 
-class _NoDefault:
-    pass
+if sys.version_info >= (3, 15):
+    _NO_DEFAULT = sentinel("_NO_DEFAULT")  # noqa: F821
+else:
 
+    class _NoDefault:
+        pass
 
-_NO_DEFAULT = _NoDefault()
+    _NO_DEFAULT = _NoDefault()
 
 
 def with_default(
@@ -141,12 +144,15 @@ def with_default(
 
     @functools.wraps(meth)
     def wrapper(
-        self: _Self, key: _K, /, default: _D | _NoDefault = _NO_DEFAULT
+        self: _Self,
+        key: _K,
+        /,
+        default: _D | _NO_DEFAULT = _NO_DEFAULT,  # ty: ignore[invalid-type-form]
     ) -> _V | _D:
         try:
             return meth(self, key)
         except KeyError:
-            if isinstance(default, _NoDefault):
+            if default is _NO_DEFAULT:
                 raise
             return default
 
