@@ -1,12 +1,7 @@
 from __future__ import annotations
 
 import sys
-from typing import Protocol, TypeVar, overload, runtime_checkable
-
-if sys.version_info >= (3, 9):
-    from collections.abc import Callable, Iterable
-else:
-    from typing import Callable, Iterable
+from typing import TYPE_CHECKING, Protocol, TypeVar, overload, runtime_checkable
 
 if sys.version_info >= (3, 12):
     from typing import override
@@ -18,6 +13,10 @@ else:
         def override(meth: Callable, /) -> Callable:
             """Fallback override decorator that does nothing."""
             return meth
+
+
+if TYPE_CHECKING:
+    from collections.abc import Callable, Iterable
 
 
 _Self = TypeVar("_Self")

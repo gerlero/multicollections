@@ -3,13 +3,8 @@
 from __future__ import annotations
 
 import importlib.metadata
-import sys
+from collections.abc import Iterable, Iterator, Mapping
 from typing import TypeVar, overload
-
-if sys.version_info >= (3, 9):
-    from collections.abc import Iterable, Iterator, Mapping
-else:
-    from typing import Iterable, Iterator, Mapping
 
 from ._typing import SupportsKeysAndGetItem, override
 from .abc import MultiMapping, MutableMultiMapping, _yield_items, with_default
@@ -380,7 +375,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
             return self._items == other._items
         if isinstance(other, MultiMapping):
             return len(self._items) == len(other) and all(
-                i1 == i2 for i1, i2 in zip(self._items, other.items())
+                i1 == i2 for i1, i2 in zip(self._items, other.items(), strict=True)
             )
         if isinstance(other, Mapping):
             if len(self) != len(other):

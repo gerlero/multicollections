@@ -1,20 +1,11 @@
 from __future__ import annotations
 
-import sys
+from collections.abc import (
+    Iterable,
+    Iterator,
+    Mapping,
+)
 from typing import Generic, TypeVar
-
-if sys.version_info >= (3, 9):
-    from collections.abc import (
-        Iterable,
-        Iterator,
-        Mapping,
-    )
-else:
-    from typing import (
-        Iterable,
-        Iterator,
-        Mapping,
-    )
 
 from multicollections._typing import override
 from multicollections.abc import MutableMultiMapping, with_default

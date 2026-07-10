@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import sys
-
 import multicollections
 import multidict
 import pytest
@@ -318,8 +316,7 @@ def test_contains(
     assert "a" in md
     assert "b" in md
     assert "missing" not in md
-    if cls is not multidict.MultiDict or sys.version_info >= (3, 9):
-        assert None not in md
+    assert None not in md
 
     # Test with empty MultiDict
     empty_md = cls()
@@ -549,12 +546,11 @@ def test_setdefault_method(
     assert len(md) == 4
 
     # Test default None (implicit)
-    if cls is not multidict.MultiDict or sys.version_info >= (3, 9):
-        # https://github.com/aio-libs/multidict/pull/1160
-        result = md.setdefault("e")
-        assert result is None
-        assert md["e"] is None
-        assert len(md) == 5
+    # https://github.com/aio-libs/multidict/pull/1160
+    result = md.setdefault("e")
+    assert result is None
+    assert md["e"] is None
+    assert len(md) == 5
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
@@ -627,9 +623,6 @@ def test_merge_method(
     cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
 ) -> None:
     """Test merge() method."""
-    if cls is multidict.MultiDict and sys.version_info < (3, 9):
-        return
-
     md = cls([("a", 1), ("b", 2)])
 
     # Test merging with pairs (should not replace existing keys)
