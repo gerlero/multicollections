@@ -8,37 +8,19 @@ import itertools
 import sys
 from abc import abstractmethod
 from collections import defaultdict
+from collections.abc import (
+    Callable,
+    Collection,
+    Iterable,
+    Iterator,
+    Mapping,
+    MappingView,
+    MutableMapping,
+)
+from collections.abc import ItemsView as MappingItemsView
+from collections.abc import KeysView as MappingKeysView
+from collections.abc import ValuesView as MappingValuesView
 from typing import Any, TypeVar, overload
-
-if sys.version_info >= (3, 9):
-    from collections.abc import (
-        Callable,
-        Collection,
-        Iterable,
-        Iterator,
-        Mapping,
-        MappingView,
-        MutableMapping,
-    )
-    from collections.abc import ItemsView as MappingItemsView
-    from collections.abc import KeysView as MappingKeysView
-    from collections.abc import ValuesView as MappingValuesView
-else:
-    from typing import (
-        Callable,
-        Collection,
-        ItemsView,
-        Iterable,
-        Iterator,
-        KeysView,
-        Mapping,
-        MappingView,
-        MutableMapping,
-        ValuesView,
-    )
-    from typing import ItemsView as MappingItemsView
-    from typing import KeysView as MappingKeysView
-    from typing import ValuesView as MappingValuesView
 
 from ._typing import MappingLike, MethodWithDefault, SupportsKeysAndGetItem, override
 
