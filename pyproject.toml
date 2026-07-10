@@ -1,5 +1,5 @@
 [build-system]
-requires = ["uv_build>=0.9,<0.12"]
+requires = ["uv_build>=0.11,<0.12"]
 build-backend = "uv_build"
 
 [project]
@@ -38,14 +38,14 @@ typing = [
     "typing_extensions>=4.4.0,<5; python_version<'3.12'"
 ]
 test = [
-    "multidict>=6,<7",
-    "pytest>=7,<10",
+    "multidict>=6.4.4,<7",
+    "pytest>=9,<10",
     "pytest-cov"
 ]
 docs = [
     "mkdocs>=1.6.1,<2",
     "mkdocs-material>=9.6.12,<10",
-    "mkdocstrings[python]>=0.29.1,<0.31",
+    "mkdocstrings[python]>=1.0.5,<2",
 ]
 dev = [
     {include-group = "lint"},
