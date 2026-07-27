@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import multicollections
 import multidict
 import pytest
+
+import multicollections
 from multicollections import MultiDict
 from multicollections._typing import SupportsKeysAndGetItem
 from multicollections.abc import MutableMultiMapping
@@ -302,7 +303,7 @@ def test_repr() -> None:
         [("x", "hello"), ("y", 42), ("x", "world")]
     )
     repr_str = repr(original)
-    recreated = eval(repr_str)  # noqa: S307
+    recreated = eval(repr_str)
     assert list(original.items()) == list(recreated.items())
 
 
@@ -879,17 +880,17 @@ def test_edge_cases_multidict_specific() -> None:
     md: MultiDict[str, int] = MultiDict([("a", 1), ("b", 2), ("a", 3)])
 
     # Test internal consistency after operations
-    assert len(md._items) == 3  # noqa: SLF001
-    assert len(md._key_indices) == 2  # noqa: SLF001
-    assert md._key_indices["a"] == [0, 2]  # noqa: SLF001
-    assert md._key_indices["b"] == [1]  # noqa: SLF001
+    assert len(md._items) == 3
+    assert len(md._key_indices) == 2
+    assert md._key_indices["a"] == [0, 2]
+    assert md._key_indices["b"] == [1]
 
     # Test that internal state is maintained after deletion
     del md["a"]
-    assert len(md._items) == 1  # noqa: SLF001
-    assert len(md._key_indices) == 1  # noqa: SLF001
-    assert "a" not in md._key_indices  # noqa: SLF001
-    assert md._key_indices["b"] == [0]  # Index should be updated  # noqa: SLF001
+    assert len(md._items) == 1
+    assert len(md._key_indices) == 1
+    assert "a" not in md._key_indices
+    assert md._key_indices["b"] == [0]  # Index should be updated
 
     # Test that internal state is maintained after setitem with duplicates
     md.add("c", 1)
@@ -897,8 +898,8 @@ def test_edge_cases_multidict_specific() -> None:
     md.add("c", 3)
     md["c"] = 999
 
-    assert len(md._items) == 2  # b and c  # noqa: SLF001
-    assert md._key_indices["c"] == [1]  # Only one index for c  # noqa: SLF001
+    assert len(md._items) == 2  # b and c
+    assert md._key_indices["c"] == [1]  # Only one index for c
 
 
 @pytest.mark.parametrize("cls", [MultiDict, multidict.MultiDict])
@@ -952,8 +953,8 @@ def test_empty_init_no_rebuild() -> None:
     """Test that empty MultiDict initialization doesn't call _rebuild_indices."""
     # This tests line 53-54: if self._items: and the else branch
     md: MultiDict[None, None] = MultiDict()
-    assert len(md._items) == 0  # noqa: SLF001
-    assert len(md._key_indices) == 0  # noqa: SLF001
+    assert len(md._items) == 0
+    assert len(md._key_indices) == 0
 
 
 def test_update_with_empty_input() -> None:
@@ -1009,13 +1010,13 @@ def test_merge_existing_key_in_indices() -> None:
     """Test merge with key that already exists in indices."""
     # This tests line 262-263: if key not in self._key_indices
     md: MultiDict[str, int] = MultiDict([("a", 1)])
-    existing_keys = set(md._key_indices.keys())  # noqa: SLF001
+    existing_keys = set(md._key_indices.keys())
     assert "a" in existing_keys
 
     # Since merge filters out existing keys, we test the else branch
     # by adding a new key
     md.merge([("b", 2)])
-    assert "b" in md._key_indices  # noqa: SLF001
+    assert "b" in md._key_indices
     assert md["b"] == 2
 
 
@@ -1026,8 +1027,8 @@ def test_extend_existing_key_in_indices() -> None:
 
     # Extend with existing key - should add to existing key's index list
     md.extend([("a", 2)])
-    assert len(md._key_indices["a"]) == 2  # noqa: SLF001
-    assert md._key_indices["a"] == [0, 1]  # noqa: SLF001
+    assert len(md._key_indices["a"]) == 2
+    assert md._key_indices["a"] == [0, 1]
 
 
 def test_update_only_updates_no_additions() -> None:
@@ -1057,8 +1058,8 @@ def test_init_with_no_items_and_no_kwargs() -> None:
     """Test initialization with completely empty input."""
     # This tests the case where _items remains empty after all initialization
     md: MultiDict[None, None] = MultiDict(())  # Empty tuple
-    assert len(md._items) == 0  # noqa: SLF001
-    assert len(md._key_indices) == 0  # noqa: SLF001
+    assert len(md._items) == 0
+    assert len(md._key_indices) == 0
 
 
 def test_collect_update_items_edge_cases() -> None:
@@ -1066,17 +1067,17 @@ def test_collect_update_items_edge_cases() -> None:
     md: MultiDict[str, int] = MultiDict([("a", 1)])
 
     # Test with empty all_items
-    updates, additions = md._collect_update_items([], set())  # noqa: SLF001
+    updates, additions = md._collect_update_items([], set())
     assert updates == {}
     assert additions == []
 
     # Test with all new keys
-    updates, additions = md._collect_update_items([("b", 2), ("c", 3)], set())  # noqa: SLF001
+    updates, additions = md._collect_update_items([("b", 2), ("c", 3)], set())
     assert updates == {}
     assert additions == [("b", 2), ("c", 3)]
 
     # Test with all existing keys
-    updates, additions = md._collect_update_items([("a", 999)], {"a"})  # noqa: SLF001
+    updates, additions = md._collect_update_items([("a", 999)], {"a"})
     assert updates == {"a": [999]}
     assert additions == []
 
@@ -1087,18 +1088,18 @@ def test_process_updates_edge_cases() -> None:
     original_len = len(md)
 
     # Test with empty updates
-    md._process_updates({})  # noqa: SLF001
+    md._process_updates({})
     assert len(md) == original_len  # Should remain unchanged
 
     # Test with single key update - need to rebuild indices after _process_updates
     md = MultiDict([("a", 1), ("b", 2), ("a", 3)])
-    md._process_updates({"a": [999]})  # noqa: SLF001
-    md._rebuild_indices()  # _process_updates doesn't rebuild indices  # noqa: SLF001
+    md._process_updates({"a": [999]})
+    md._rebuild_indices()  # _process_updates doesn't rebuild indices
     assert md["a"] == 999
     assert md["b"] == 2
 
 
-def test_multidict_equality() -> None:  # noqa: PLR0915
+def test_multidict_equality() -> None:
     """Test MultiDict.__eq__ against different types."""
     # Create test data
     md1 = MultiDict([("a", 1), ("b", 2), ("a", 3)])

@@ -43,44 +43,46 @@ conda install -c conda-forge multicollections
 from multicollections import MultiDict
 
 # Create a MultiDict with duplicate keys
-headers = MultiDict([
-    ('Accept', 'text/html'),
-    ('Accept-Encoding', 'gzip'),
-    ('Accept', 'application/json'),  # Same key, different value
-    ('User-Agent', 'MyApp/1.0')
-])
+headers = MultiDict(
+    [
+        ("Accept", "text/html"),
+        ("Accept-Encoding", "gzip"),
+        ("Accept", "application/json"),  # Same key, different value
+        ("User-Agent", "MyApp/1.0"),
+    ]
+)
 
 # Access the first value for a key
-print(headers['Accept'])  # 'text/html'
+print(headers["Accept"])  # 'text/html'
 
 # Get ALL values for a key
-print(headers.getall('Accept'))  # ['text/html', 'application/json']
+print(headers.getall("Accept"))  # ['text/html', 'application/json']
 
 # See all key-value pairs (duplicates preserved)
 print(list(headers.items()))
-# [('Accept', 'text/html'), ('Accept-Encoding', 'gzip'), 
+# [('Accept', 'text/html'), ('Accept-Encoding', 'gzip'),
 #  ('Accept', 'application/json'), ('User-Agent', 'MyApp/1.0')]
 
 # Add more values for existing keys
-headers.add('Accept', 'text/xml')
-print(headers.getall('Accept'))  # ['text/html', 'application/json', 'text/xml']
+headers.add("Accept", "text/xml")
+print(headers.getall("Accept"))  # ['text/html', 'application/json', 'text/xml']
 print(len(headers))  # 5 items total
 
 # Remove and return the first value
-first_accept = headers.popone('Accept')
+first_accept = headers.popone("Accept")
 print(first_accept)  # 'text/html'
-print(headers.getall('Accept'))  # ['application/json', 'text/xml']
+print(headers.getall("Accept"))  # ['application/json', 'text/xml']
 
 # Remove and return all values for a key
-all_accepts = headers.popall('Accept')
+all_accepts = headers.popall("Accept")
 print(all_accepts)  # ['application/json', 'text/xml']
-print('Accept' in headers)  # False
+print("Accept" in headers)  # False
 
 # Create from keyword arguments
-config = MultiDict(host='localhost', port=8080, debug=True)
+config = MultiDict(host="localhost", port=8080, debug=True)
 
 # Mix iterable and keyword arguments
-mixed = MultiDict([('a', 1), ('b', 2)], c=3, d=4)
+mixed = MultiDict([("a", 1), ("b", 2)], c=3, d=4)
 ```
 
 ## 📖 Why MultiDict?

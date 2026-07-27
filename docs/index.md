@@ -23,13 +23,13 @@ pip install multicollections
 from multicollections import MultiDict
 
 # Create a MultiDict with duplicate keys
-md = MultiDict([('fruit', 'apple'), ('fruit', 'banana'), ('color', 'red')])
+md = MultiDict([("fruit", "apple"), ("fruit", "banana"), ("color", "red")])
 
 # Access the first value
-print(md['fruit'])  # 'apple'
+print(md["fruit"])  # 'apple'
 
 # Add more values
-md.add('fruit', 'orange')
+md.add("fruit", "orange")
 ```
 
 ## Documentation
