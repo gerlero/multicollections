@@ -17,7 +17,7 @@ _V = TypeVar("_V")
 _D = TypeVar("_D")
 
 
-class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
+class MultiDict(MutableMultiMapping[_K, _V]):
     """A fully generic dictionary that allows multiple values with the same key.
 
     Preserves insertion order.
@@ -355,12 +355,12 @@ class MultiDict(MutableMultiMapping[_K, _V]):  # noqa: PLW1641
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
         new_md = MultiDict.__new__(MultiDict)
-        new_md._items = self._items.copy()  # noqa: SLF001
-        new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}  # noqa: SLF001
+        new_md._items = self._items.copy()
+        new_md._key_indices = {k: v.copy() for k, v in self._key_indices.items()}
         return new_md
 
     @override
-    def __eq__(self, other: object) -> bool:  # noqa: PLR0911
+    def __eq__(self, other: object) -> bool:
         """Check equality with another MultiDict or mapping-like object.
 
         Two `MultiDict` instances (or a `MultiDict` and any `MultiMapping`) are
