@@ -80,13 +80,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return key in self._key_indices
 
     @overload
-    def get(self, key: _K, /) -> _V | None: ...
+    def get(self, key: object, /) -> _V | None: ...
 
     @overload
-    def get(self, key: _K, default: _D, /) -> _V | _D: ...
+    def get(self, key: object, default: _D, /) -> _V | _D: ...
 
     @override
-    def get(self, key: _K, default: _D | None = None, /) -> _V | _D | None:
+    def get(self, key: object, default: _D | None = None, /) -> _V | _D | None:
         """Get the first value for a key, or a default value if not found.
 
         This is optimized to directly check the key indices without
