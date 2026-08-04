@@ -7,7 +7,13 @@ from collections.abc import Iterable, Iterator, Mapping
 from typing import TypeVar, overload
 
 from ._typing import SupportsKeysAndGetItem, override
-from .abc import MultiMapping, MutableMultiMapping, _yield_items, with_default
+from .abc import (
+    MultiMapping,
+    MutableMultiMapping,
+    _updated_items,
+    _yield_items,
+    with_default,
+)
 
 __version__ = importlib.metadata.version("multicollections")
 
@@ -215,44 +221,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         self._items.clear()
         self._key_indices.clear()
 
-    def _collect_update_items(
-        self,
-        all_items: list[tuple[_K, _V]],
-        existing_keys: set[_K],
-    ) -> tuple[dict[_K, list[_V]], list[tuple[_K, _V]]]:
-        """Separate items into updates and additions."""
-        updates_by_key: dict[_K, list[_V]] = {}  # key -> list of values to replace with
-        additions = []  # list of (key, value) for new keys
-
-        for key, value in all_items:
-            if key in existing_keys:
-                if (values_list := updates_by_key.get(key)) is None:
-                    updates_by_key[key] = values_list = []
-                values_list.append(value)
-            else:
-                additions.append((key, value))
-
-        return updates_by_key, additions
-
-    def _process_updates(self, updates_by_key: dict[_K, list[_V]]) -> None:
-        """Process updates efficiently by batch removing and adding."""
-        # Mark items for removal that need to be replaced
-        items_to_remove = set()
-        for key in updates_by_key:
-            items_to_remove.update(self._key_indices[key])
-
-        # Mark items for removal
-        for idx in items_to_remove:
-            self._items[idx] = None  # ty: ignore[invalid-assignment]
-
-        # Filter out None items
-        self._items = [item for item in self._items if item is not None]
-
-        # Add updated items (all values for each key)
-        for key, values in updates_by_key.items():
-            for value in values:
-                self._items.append((key, value))
-
     @override
     def update(
         self,
@@ -262,32 +230,17 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     ) -> None:
         """Update the multi-mapping with items from another object.
 
-        This replaces existing values for keys found in the other object.
-        This is optimized for batch operations.
+        Values for keys that already exist replace them in place, keeping their
+        positions; values for new keys are appended.
         """
         # Collect all items first
-        all_items = list(_yield_items(other, **kwargs))
+        updates = list(_yield_items(other, **kwargs))
 
-        if not all_items:
+        if not updates:
             return
 
-        # Get existing keys once for efficiency
-        existing_keys = set(self._key_indices.keys())
-
-        # Separate items into updates and additions
-        updates_by_key, additions = self._collect_update_items(all_items, existing_keys)
-
-        # Process updates efficiently
-        if updates_by_key:
-            self._process_updates(updates_by_key)
-
-        # Add new items
-        if additions:
-            self._items.extend(additions)
-
-        # Rebuild indices once at the end
-        if updates_by_key or additions:
-            self._rebuild_indices()
+        self._items = _updated_items(self._items, updates, self._key_indices)
+        self._rebuild_indices()
 
     @override
     def merge(
