@@ -665,6 +665,7 @@ def test_update_method(
     assert md["b"] == 2  # Unchanged
     assert md["c"] == 4  # New key added
     assert md.getall("a") == [999, 5]  # Both 'a' values present
+    assert list(md.items()) == [("a", 999), ("b", 2), ("a", 5), ("c", 4)]
 
     # Test updating with dict
     md2 = cls([("x", 10), ("y", 20)])
@@ -673,6 +674,7 @@ def test_update_method(
     assert md2["x"] == 999  # Replaced
     assert md2["y"] == 20  # Unchanged
     assert md2["z"] == 30  # New key added
+    assert list(md2.items()) == [("x", 999), ("y", 20), ("z", 30)]
 
     # Test updating with kwargs
     md3 = cls([("a", 1), ("b", 2)])
@@ -681,6 +683,7 @@ def test_update_method(
     assert md3["a"] == 999  # Replaced
     assert md3["b"] == 2  # Unchanged
     assert md3["c"] == 3  # New key added
+    assert list(md3.items()) == [("a", 999), ("b", 2), ("c", 3)]
 
     # Test updating with args and kwargs
     md4 = cls([("a", 1), ("b", 2)])
@@ -690,6 +693,53 @@ def test_update_method(
     assert md4["b"] == 2  # Unchanged
     assert md4["c"] == 3  # New key added
     assert md4.getall("a") == [999, 4]  # Both 'a' values present
+    assert list(md4.items()) == [("a", 999), ("b", 2), ("c", 3), ("a", 4)]
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_update_replaces_in_place(
+    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+) -> None:
+    """Test that update() replaces existing items where they are."""
+    # An updated key keeps its position
+    md = cls([("a", 1), ("b", 2), ("c", 3)])
+    md.update([("b", 99)])
+    assert list(md.items()) == [("a", 1), ("b", 99), ("c", 3)]
+
+    # Same result as assigning the key directly
+    md2 = cls([("a", 1), ("b", 2), ("c", 3)])
+    md2["b"] = 99
+    assert list(md2.items()) == list(md.items())
+
+    # Duplicates of an updated key are dropped, not moved to the end
+    md3 = cls([("a", 1), ("b", 2), ("b", 22), ("c", 3)])
+    md3.update([("b", 99)])
+    assert list(md3.items()) == [("a", 1), ("b", 99), ("c", 3)]
+
+    # Extra values fill the remaining items for the key before being appended
+    md4 = cls([("a", 1), ("b", 2), ("b", 22), ("c", 3)])
+    md4.update([("b", 99), ("b", 100), ("b", 101)])
+    assert list(md4.items()) == [("a", 1), ("b", 99), ("b", 100), ("c", 3), ("b", 101)]
+
+    # New keys are appended in the order given, after the existing items
+    md5 = cls([("a", 1), ("b", 2)])
+    md5.update([("z", 9), ("b", 99), ("y", 8)])
+    assert list(md5.items()) == [("a", 1), ("b", 99), ("z", 9), ("y", 8)]
+
+    # The values of a repeated key are consumed in the order given
+    md6 = cls([("a", 1), ("b", 2)])
+    md6.update([("b", 5), ("a", 4), ("b", 6), ("a", 7)])
+    assert list(md6.items()) == [("a", 4), ("b", 5), ("b", 6), ("a", 7)]
+
+    # Updating an empty multi-mapping just adds the items
+    md7 = cls()
+    md7.update([("a", 1), ("a", 2)])
+    assert list(md7.items()) == [("a", 1), ("a", 2)]
+
+    # An empty update leaves the items untouched
+    md8 = cls([("a", 1), ("b", 2), ("a", 3)])
+    md8.update()
+    assert list(md8.items()) == [("a", 1), ("b", 2), ("a", 3)]
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, dict])
@@ -1062,41 +1112,13 @@ def test_init_with_no_items_and_no_kwargs() -> None:
     assert len(md._key_indices) == 0
 
 
-def test_collect_update_items_edge_cases() -> None:
-    """Test _collect_update_items helper method edge cases."""
-    md: MultiDict[str, int] = MultiDict([("a", 1)])
+def test_update_keeps_indices_consistent() -> None:
+    """Test that update() leaves the key indices matching the items."""
+    md: MultiDict[str, int] = MultiDict([("a", 1), ("b", 2), ("a", 3), ("c", 4)])
+    md.update([("a", 999), ("d", 5), ("a", 6), ("a", 7)])
 
-    # Test with empty all_items
-    updates, additions = md._collect_update_items([], set())
-    assert updates == {}
-    assert additions == []
-
-    # Test with all new keys
-    updates, additions = md._collect_update_items([("b", 2), ("c", 3)], set())
-    assert updates == {}
-    assert additions == [("b", 2), ("c", 3)]
-
-    # Test with all existing keys
-    updates, additions = md._collect_update_items([("a", 999)], {"a"})
-    assert updates == {"a": [999]}
-    assert additions == []
-
-
-def test_process_updates_edge_cases() -> None:
-    """Test _process_updates helper method edge cases."""
-    md: MultiDict[str, int] = MultiDict([("a", 1), ("b", 2), ("a", 3)])
-    original_len = len(md)
-
-    # Test with empty updates
-    md._process_updates({})
-    assert len(md) == original_len  # Should remain unchanged
-
-    # Test with single key update - need to rebuild indices after _process_updates
-    md = MultiDict([("a", 1), ("b", 2), ("a", 3)])
-    md._process_updates({"a": [999]})
-    md._rebuild_indices()  # _process_updates doesn't rebuild indices
-    assert md["a"] == 999
-    assert md["b"] == 2
+    assert md._items == [("a", 999), ("b", 2), ("a", 6), ("c", 4), ("d", 5), ("a", 7)]
+    assert md._key_indices == {"a": [0, 2, 5], "b": [1], "c": [3], "d": [4]}
 
 
 def test_multidict_equality() -> None:
