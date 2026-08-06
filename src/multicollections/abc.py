@@ -147,7 +147,7 @@ def _yield_items(
     if isinstance(obj, MappingLike):
         yield from obj.items()
     elif isinstance(obj, SupportsKeysAndGetItem):
-        yield from ((k, obj[k]) for k in obj.keys())  # noqa: SIM118  # ty: ignore[invalid-argument-type]
+        yield from ((k, obj[k]) for k in obj.keys())  # noqa: SIM118
     else:
         yield from obj
 
