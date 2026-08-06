@@ -382,7 +382,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
                 return False
             try:
                 for k, v in self._items:
-                    if other[k] != v:  # ty: ignore[invalid-argument-type]
+                    if other[k] != v:
                         return False
             except KeyError:
                 return False
