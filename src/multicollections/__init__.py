@@ -186,6 +186,27 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return value
 
     @override
+    def popitem(self) -> tuple[_K, _V]:
+        """Remove and return the last (key, value) pair.
+
+        Raises a `KeyError` if the MultiDict is empty.
+
+        This is optimized to drop the last item directly, as removing it cannot
+        shift the index of any other item.
+        """
+        if not self._items:
+            msg = "popitem(): multi-mapping is empty"
+            raise KeyError(msg)
+
+        key, value = self._items.pop()
+        indices = self._key_indices[key]
+        indices.pop()
+        if not indices:
+            del self._key_indices[key]
+
+        return key, value
+
+    @override
     def __delitem__(self, key: _K, /) -> None:
         """Remove all values for a key.
 
