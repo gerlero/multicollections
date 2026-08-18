@@ -317,9 +317,26 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
     @override
     def popitem(self) -> tuple[_K, _V]:
-        """Remove and return a (key, value) pair."""
-        key = next(iter(self))
-        value = self.popone(key)
+        """Remove and return the last (key, value) pair.
+
+        Raises a `KeyError` if the multi-mapping is empty.
+        """
+        keys = list(self)
+        if not keys:
+            msg = "popitem(): multi-mapping is empty"
+            raise KeyError(msg)
+        key = keys[-1]
+
+        values = self.getall(key)
+        if len(values) == 1:
+            # Only item for this key, so `popone` removes this one.
+            return key, self.popone(key)
+
+        # `popone` would remove an earlier item for the same key, so rebuild instead.
+        items = list(self.items())
+        value = items.pop()[1]
+        self.clear()
+        self.extend(items)
         return key, value
 
     @override

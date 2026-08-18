@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
+
 import multidict
 import pytest
 
@@ -496,10 +498,10 @@ def test_popitem_method(
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     original_len = len(md)
 
-    # Test popping first item (value may differ between implementations)
+    # Test popping the last item
     key, value = md.popitem()
     assert key == "a"
-    assert value in [1, 3]  # Different implementations may return different values
+    assert value == 3
     assert len(md) == original_len - 1
 
     # Test popping from single-item dict
@@ -511,10 +513,93 @@ def test_popitem_method(
 
     # Test empty MultiDict
     empty_md = cls()
-    with pytest.raises(
-        (StopIteration, KeyError)
-    ):  # Different implementations may raise different errors
+    with pytest.raises(KeyError):
         empty_md.popitem()
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+@pytest.mark.parametrize(
+    "items",
+    [
+        [("a", 1)],
+        [("a", 1), ("b", 2)],
+        [("a", 1), ("b", 2), ("c", 3)],
+        [("a", 1), ("a", 2)],
+        [("a", 1), ("b", 2), ("a", 3)],
+        [("b", 2), ("a", 1), ("b", 22)],
+        [("x", 0), ("y", 1), ("x", 2), ("z", 3), ("y", 4), ("x", 5)],
+    ],
+)
+def test_popitem_removes_the_last_item(
+    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+    items: list[tuple[str, int]],
+) -> None:
+    """popitem() takes the last item, like dict and multidict."""
+    md = cls(items)
+
+    assert md.popitem() == items[-1]
+    assert list(md.items()) == items[:-1]
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_popitem_drains_in_reverse_order(
+    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+) -> None:
+    """Repeated popitem() calls unwind the multi-mapping."""
+    items = [("a", 1), ("b", 2), ("a", 3), ("c", 4)]
+    md = cls(items)
+
+    assert [md.popitem() for _ in range(len(items))] == items[::-1]
+    assert len(md) == 0
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_popitem_takes_the_last_item_for_a_repeated_key(
+    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+) -> None:
+    """The last item wins even when earlier items share its key."""
+    md = cls([("a", 1), ("b", 2)])
+    md.add("a", 3)
+
+    assert md.popitem() == ("a", 3)
+    assert list(md.items()) == [("a", 1), ("b", 2)]
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_popitem_forgets_the_key_of_the_popped_item(
+    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+) -> None:
+    """Popping a key's only item removes the key itself."""
+    md = cls([("a", 1), ("b", 2)])
+
+    assert md.popitem() == ("b", 2)
+    assert "b" not in md
+    with pytest.raises(KeyError):
+        md["b"]
+
+    assert md.popitem() == ("a", 1)
+    assert "a" not in md
+    assert len(md) == 0
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_popitem_on_empty_raises_key_error(
+    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+) -> None:
+    """An empty multi-mapping raises KeyError, not StopIteration."""
+    md = cls()
+
+    with pytest.raises(KeyError):
+        md.popitem()
+
+    # A leaked StopIteration would end this loop early instead of propagating.
+    def drain() -> Iterator[tuple[str, int]]:
+        while True:
+            yield md.popitem()
+
+    md.add("a", 1)
+    with pytest.raises(KeyError):
+        list(drain())
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
