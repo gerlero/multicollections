@@ -21,6 +21,7 @@ __version__ = importlib.metadata.version("multicollections")
 _K = TypeVar("_K")
 _V = TypeVar("_V")
 _D = TypeVar("_D")
+_T = TypeVar("_T")
 
 
 class MultiDict(MutableMultiMapping[_K, _V]):
@@ -103,10 +104,15 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return self._items[indices[0]][1]
 
     @overload
-    def setdefault(self, key: _K, /) -> _V | None: ...
+    def setdefault(
+        self: MultiDict[_K, _T | None],
+        key: _K,
+        default: None = None,
+        /,
+    ) -> _T | None: ...
 
     @overload
-    def setdefault(self, key: _K, default: _D, /) -> _V | _D: ...
+    def setdefault(self, key: _K, default: _V, /) -> _V: ...
 
     @override
     def setdefault(self, key: _K, default: _D | None = None, /) -> _V | _D | None:
@@ -119,7 +125,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             # Key exists, return its first value
             return self._items[indices[0]][1]
         # Key doesn't exist, add it with the default value
-        self.add(key, default)
+        self.add(key, default)  # ty: ignore[invalid-argument-type]
         return default
 
     @override

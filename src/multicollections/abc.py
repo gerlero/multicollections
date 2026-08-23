@@ -404,7 +404,7 @@ try:
 except ImportError:  # pragma: no cover
     pass
 else:
-    MutableMultiMapping.register(multidict.MultiDict)  # ty: ignore[unresolved-attribute]
-    MutableMultiMapping.register(multidict.CIMultiDict)  # ty: ignore[unresolved-attribute]
-    MultiMapping.register(multidict.MultiDictProxy)  # ty: ignore[unresolved-attribute]
-    MultiMapping.register(multidict.CIMultiDictProxy)  # ty: ignore[unresolved-attribute]
+    MutableMultiMapping.register(multidict.MultiDict)
+    MutableMultiMapping.register(multidict.CIMultiDict)
+    MultiMapping.register(multidict.MultiDictProxy)
+    MultiMapping.register(multidict.CIMultiDictProxy)
