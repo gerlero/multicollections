@@ -66,14 +66,15 @@ class ItemsView(MappingItemsView[_K, _V], MultiMappingView):
     @override
     def __contains__(self, item: object, /) -> bool:
         """Check if the item is in the multi-mapping."""
-        try:
-            key, value = item  # ty: ignore[not-iterable]
-        except TypeError:
-            return False
-        try:
-            return value in self._mapping.getall(key)
-        except KeyError:
-            return False
+        match item:
+            case key, value:
+                try:
+                    values = self._mapping.getall(key)
+                except KeyError:
+                    return False
+                return value in values
+            case _:
+                return False
 
     @override
     def __iter__(self) -> Iterator[tuple[_K, _V]]:
