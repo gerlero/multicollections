@@ -192,6 +192,25 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return value
 
     @override
+    @with_default
+    def popall(self, key: _K, /) -> list[_V]:
+        """Remove and return all values for a key."""
+        if (indices_to_remove := self._key_indices.get(key)) is None:
+            raise KeyError(key)
+
+        ret = [self._items[i][1] for i in indices_to_remove]
+
+        # Mark items for removal
+        for idx in indices_to_remove:
+            self._items[idx] = None  # ty: ignore[invalid-assignment]
+
+        # Filter out None items and rebuild indices
+        self._items = [item for item in self._items if item is not None]
+        self._rebuild_indices()
+
+        return ret
+
+    @override
     def popitem(self) -> tuple[_K, _V]:
         """Remove and return the last (key, value) pair.
 
