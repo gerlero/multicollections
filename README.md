@@ -19,7 +19,7 @@ A fully generic `MultiDict` implementation for Python
 
 </div>
 
-[`multicollections.MultiDict`]((https://multicollections.readthedocs.io/en/stable/api/multicollections/) ) stores multiple values for the same key while preserving insertion order. Its API follows [`multidict`](https://github.com/aio-libs/multidict), but keys can be of arbitrary [hashable](https://docs.python.org/3/glossary.html#term-hashable) types.
+[`multicollections.MultiDict`](https://multicollections.readthedocs.io/en/stable/api/multicollections/) stores multiple values for the same key while preserving insertion order. Its API follows [`multidict`](https://github.com/aio-libs/multidict), but keys can be of arbitrary [hashable](https://docs.python.org/3/glossary.html#term-hashable) types.
 
 
 
