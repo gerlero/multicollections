@@ -1,6 +1,9 @@
-# multicollections
+<div align="center">
+<a href="https://github.com/gerlero/multicollections"><img src="https://github.com/gerlero/multicollections/raw/main/logo.png" height="200"></a>
 
-A fully generic [`MultiDict`](https://multicollections.readthedocs.io/en/latest/api/multicollections/) class that allows multiple values for the same key while preserving insertion order.
+A fully generic `MultiDict` implementation for Python
+
+---
 
 [![Documentation](https://img.shields.io/readthedocs/multicollections)](https://multicollections.readthedocs.io/)
 [![CI](https://github.com/gerlero/multicollections/actions/workflows/ci.yml/badge.svg)](https://github.com/gerlero/multicollections/actions/workflows/ci.yml)
@@ -12,90 +15,47 @@ A fully generic [`MultiDict`](https://multicollections.readthedocs.io/en/latest/
 [![PyPI](https://img.shields.io/pypi/v/multicollections)](https://pypi.org/project/multicollections/)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/multicollections)](https://pypi.org/project/multicollections/)
 
-## ✨ Features
+---
 
-- **🔑 Multiple values per key**: Store multiple values for the same key, perfect for handling data like HTTP headers, form data, or configuration files
-- **📝 Insertion order preserved**: Maintains the order in which items are added
-- **🧩 Fully generic**: Accepts any types for both keys and values
-- **✅ Thoroughly tested**: 100% code coverage
-- **⚡ Type-safe**: Fully typed with generics
-- **🪶 Lightweight**: Zero dependencies, pure Python implementation
-- **🎯 Rich, compatible API**: Implements the [`multidict` API](https://multidict.aio-libs.org/en/stable/multidict/#multidict)
-- **📐 Abstract base classes**: The [`multicollections.abc`](https://multicollections.readthedocs.io/en/stable/api/abc/) module provides a common interface for other custom multi-value collections
+</div>
 
-## 📦 Installation
+[`multicollections.MultiDict`]((https://multicollections.readthedocs.io/en/stable/api/multicollections/) ) stores multiple values for the same key while preserving insertion order. Its API follows [`multidict`](https://github.com/aio-libs/multidict), but keys can be of arbitrary [hashable](https://docs.python.org/3/glossary.html#term-hashable) types.
 
-### pip
+
+
+## Installation
+
+With pip:
 
 ```bash
 pip install multicollections
 ```
 
-### conda
+or conda:
 
 ```bash
 conda install -c conda-forge multicollections
 ```
 
-## 🚀 Quick Start
+## Usage
 
 ```python
 from multicollections import MultiDict
 
-# Create a MultiDict with duplicate keys
-headers = MultiDict(
-    [
-        ("Accept", "text/html"),
-        ("Accept-Encoding", "gzip"),
-        ("Accept", "application/json"),  # Same key, different value
-        ("User-Agent", "MyApp/1.0"),
-    ]
-)
+d = MultiDict([("a", 1), ("b", 2), ("a", 3)])
 
-# Access the first value for a key
-print(headers["Accept"])  # 'text/html'
+d["a"]
+# 1
 
-# Get ALL values for a key
-print(headers.getall("Accept"))  # ['text/html', 'application/json']
+d.getall("a")
+# [1, 3]
 
-# See all key-value pairs (duplicates preserved)
-print(list(headers.items()))
-# [('Accept', 'text/html'), ('Accept-Encoding', 'gzip'),
-#  ('Accept', 'application/json'), ('User-Agent', 'MyApp/1.0')]
+list(d.items())
+# [("a", 1), ("b", 2), ("a", 3)]
 
-# Add more values for existing keys
-headers.add("Accept", "text/xml")
-print(headers.getall("Accept"))  # ['text/html', 'application/json', 'text/xml']
-print(len(headers))  # 5 items total
-
-# Remove and return the first value
-first_accept = headers.popone("Accept")
-print(first_accept)  # 'text/html'
-print(headers.getall("Accept"))  # ['application/json', 'text/xml']
-
-# Remove and return all values for a key
-all_accepts = headers.popall("Accept")
-print(all_accepts)  # ['application/json', 'text/xml']
-print("Accept" in headers)  # False
-
-# Create from keyword arguments
-config = MultiDict(host="localhost", port=8080, debug=True)
-
-# Mix iterable and keyword arguments
-mixed = MultiDict([("a", 1), ("b", 2)], c=3, d=4)
+d.add("a", 4)
 ```
 
-## 📖 Why MultiDict?
+The [`multicollections.abc`](https://multicollections.readthedocs.io/en/stable/api/abc/) module provides abstract base classes for implementing other multi-value collections.
 
-Standard Python dictionaries can only hold one value per key. When you need to handle data formats that naturally allow multiple values for the same key, [`MultiDict`](https://multicollections.readthedocs.io/en/stable/api/multicollections/) is the perfect solution:
-
-- **HTTP headers**: Multiple `Accept` or `Set-Cookie` headers
-- **URL query parameters**: `?tag=python&tag=web&tag=api`
-- **Form data**: Multiple form fields with the same name
-- **Configuration files**: Multiple values for the same configuration key
-
-As opposed to the popular [`multidict`](https://github.com/aio-libs/multidict) package, `multicollections`'s [`MultiDict`](https://multicollections.readthedocs.io/en/stable/api/multicollections/) implementation allows both keys and values to be of any type, providing greater flexibility.
-
-## 🔗 Documentation
-
-For detailed documentation, examples, and API reference, visit: https://multicollections.readthedocs.io/
+See the [documentation](https://multicollections.readthedocs.io/) for the full API.
