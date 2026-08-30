@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator, Mapping
 
 import multidict
 import pytest
 
 import multicollections
 from multicollections import MultiDict
-from multicollections._typing import SupportsKeysAndGetItem
+from multicollections._typing import MappingLike, SupportsKeysAndGetItem
 from multicollections.abc import MutableMultiMapping
 
 from .minimalimpl import BasicDictWrapper, ListMultiDict
@@ -53,9 +53,22 @@ def test_creation_from_pairs(
     assert list(md.values()) == [1, 2, 3]
 
 
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+@pytest.mark.parametrize(
+    "cls",
+    [
+        MultiDict,
+        ListMultiDict,
+        dict,
+        multidict.MultiDict,
+    ],
+)
 def test_creation_from_dict(
-    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+    cls: type[
+        MultiDict[str, int]
+        | ListMultiDict[str, int]
+        | dict[str, int]
+        | multidict.MultiDict[int]
+    ],
 ) -> None:
     """Test creating MultiDict from regular dict."""
     d = {"x": 10, "y": 20, "z": 30}
@@ -65,13 +78,83 @@ def test_creation_from_dict(
     for key, value in d.items():
         assert md[key] == value
 
-    # Order is preserved (dict insertion order is preserved in Python 3.7+)
-    assert set(md.items()) == set(d.items())
+    assert list(md.items()) == list(d.items())
+    assert md.items() == d.items()
 
 
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, dict])
+def test_creation_from_duck_mapping(
+    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | dict[str, int]],
+) -> None:
+    """Test creating MultiDict from a duck-typed mapping."""
+
+    class DuckMapping:
+        def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
+            self._dict = dict(items)
+
+        def __getitem__(self, key: str) -> int:
+            return self._dict[key]
+
+        def keys(self) -> Iterable[str]:
+            return self._dict.keys()
+
+    assert issubclass(DuckMapping, SupportsKeysAndGetItem)
+    assert not issubclass(DuckMapping, MappingLike)
+    assert not issubclass(DuckMapping, Mapping)
+
+    duck = DuckMapping([("p", 100), ("q", 200)])
+    assert isinstance(duck, SupportsKeysAndGetItem)
+    assert not isinstance(duck, MappingLike)
+    assert not isinstance(duck, Mapping)
+
+    md = cls(duck)
+
+    assert len(md) == 2
+    assert list(md.items()) == [("p", 100), ("q", 200)]
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict])
+def test_creation_from_duck_multi_mapping(
+    cls: type[MultiDict[str, int] | ListMultiDict[str, int]],
+) -> None:
+    """Test creating MultiDict from a duck-typed mapping."""
+
+    class DuckMultiMapping:
+        def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
+            self._items = list(items)
+
+        def __getitem__(self, key: str) -> int:
+            assert False
+
+        def keys(self) -> Iterable[str]:
+            assert False
+
+        def items(self) -> Iterable[tuple[str, int]]:
+            return self._items
+
+    assert issubclass(DuckMultiMapping, MappingLike)
+    assert issubclass(DuckMultiMapping, SupportsKeysAndGetItem)
+    assert not issubclass(DuckMultiMapping, Mapping)
+
+    duck = DuckMultiMapping([("p", 100), ("p", 200)])
+    assert isinstance(duck, MappingLike)
+    assert isinstance(duck, SupportsKeysAndGetItem)
+    assert not isinstance(duck, Mapping)
+
+    md = cls(duck)
+
+    assert len(md) == 2
+    assert list(md.items()) == [("p", 100), ("p", 200)]
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, dict, multidict.MultiDict])
 def test_creation_with_kwargs(
-    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+    cls: type[
+        MultiDict[str, int]
+        | ListMultiDict[str, int]
+        | dict[str, int]
+        | multidict.MultiDict[int]
+    ],
 ) -> None:
     """Test creating MultiDict with keyword arguments."""
     md = cls(a=1, b=2, c=3)
@@ -82,9 +165,11 @@ def test_creation_with_kwargs(
     assert md["c"] == 3
 
 
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, dict, multidict.MultiDict])
 def test_creation_mixed(
-    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+    cls: type[
+        MultiDict[str, int] | ListMultiDict[str, int] | dict | multidict.MultiDict[int]
+    ],
 ) -> None:
     """Test creating MultiDict with both iterable and kwargs."""
     pairs = [("a", 1), ("b", 2)]
