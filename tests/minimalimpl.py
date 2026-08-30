@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from collections.abc import (
-    Iterable,
-    Iterator,
-    Mapping,
-)
+from collections.abc import Iterable, Iterator, Mapping
 from typing import Generic, TypeVar
 
-from multicollections._typing import override
+from multicollections._typing import MappingLike, SupportsKeysAndGetItem, override
 from multicollections.abc import MutableMultiMapping, with_default
 
 _K = TypeVar("_K")
@@ -16,17 +12,17 @@ _V = TypeVar("_V")
 
 class ListMultiDict(MutableMultiMapping[_K, _V]):
     def __init__(
-        self, iterable: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (), **kwargs: _V
+        self, iterable: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (), /, **kwargs: _V
     ) -> None:
-        self._items: list[tuple[_K, _V]] = []
-        if isinstance(iterable, Mapping):
-            for key, value in iterable.items():
-                self._items.append((key, value))  # ty: ignore[invalid-argument-type]
-        else:
-            for key, value in iterable:
-                self._items.append((key, value))
-        for key, value in kwargs.items():
-            self._items.append((key, value))  # ty: ignore[invalid-argument-type]
+        match iterable:
+            case MappingLike():
+                self._items = list(iterable.items())
+            case SupportsKeysAndGetItem():
+                self._items = [(k, iterable[k]) for k in iterable.keys()]  # noqa: SIM118
+            case _:
+                self._items = list(iterable)
+
+        self._items.extend(kwargs.items())
 
     @override
     @with_default
