@@ -10,7 +10,6 @@ from ._typing import SupportsKeysAndGetItem, override
 from .abc import (
     MultiMapping,
     MutableMultiMapping,
-    _updated_items,
     _yield_items,
     with_default,
 )
@@ -235,81 +234,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """Remove all items from the multi-mapping."""
         self._items.clear()
         self._key_indices.clear()
-
-    @override
-    def update(
-        self,
-        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
-        /,
-        **kwargs: _V,
-    ) -> None:
-        """Update the multi-mapping with items from another object.
-
-        Values for keys that already exist replace them in place, keeping their
-        positions; values for new keys are appended.
-        """
-        # Collect all items first
-        updates = list(_yield_items(other, **kwargs))
-
-        if not updates:
-            return
-
-        self._items = _updated_items(self._items, updates, self._key_indices)
-        self._rebuild_indices()
-
-    @override
-    def merge(
-        self,
-        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
-        /,
-        **kwargs: _V,
-    ) -> None:
-        """Merge another object into the multi-mapping.
-
-        Keys from `other` that already exist in the multi-mapping will not be added.
-        """
-        # Get existing keys once for efficiency
-        existing_keys = set(self._key_indices.keys())
-
-        # Collect all items and filter out existing keys
-        new_items = [
-            (key, value)
-            for key, value in _yield_items(other, **kwargs)
-            if key not in existing_keys
-        ]
-
-        if not new_items:
-            return
-
-        # Add all items to the list at once
-        start_index = len(self._items)
-        self._items.extend(new_items)
-
-        # Update indices incrementally for better performance
-        for i, (key, _) in enumerate(new_items, start_index):
-            self._key_indices.setdefault(key, []).append(i)
-
-    @override
-    def extend(
-        self,
-        other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
-        /,
-        **kwargs: _V,
-    ) -> None:
-        """Extend the multi-mapping with items from another object."""
-        # Collect all new items first
-        new_items = list(_yield_items(other, **kwargs))
-
-        if not new_items:
-            return
-
-        # Add all items to the list at once
-        start_index = len(self._items)
-        self._items.extend(new_items)
-
-        # Update indices incrementally for better performance
-        for i, (key, _) in enumerate(new_items, start_index):
-            self._key_indices.setdefault(key, []).append(i)
 
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
