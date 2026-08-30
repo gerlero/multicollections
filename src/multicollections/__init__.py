@@ -82,11 +82,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     def get(self, key: object, default: _D | None = None, /) -> _V | _D | None:
-        """Get the first value for a key, or a default value if not found.
-
-        This is optimized to directly check the key indices without
-        calling __getitem__, avoiding exception handling overhead.
-        """
+        """Get the first value for a key, or a default value if not found."""
         if (indices := self._key_indices.get(key)) is None:
             return default
         return self._items[indices[0]][1]
@@ -104,11 +100,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     def setdefault(self, key: _K, default: _D | None = None, /) -> _V | _D | None:
-        """Get the first value for a key, or set and return a default if not found.
-
-        This is optimized to perform a single lookup in the key indices,
-        rather than calling __getitem__ and __setitem__ separately.
-        """
+        """Get the first value for a key, or set and return a default if not found."""
         if (indices := self._key_indices.get(key)) is not None:
             # Key exists, return its first value
             return self._items[indices[0]][1]
@@ -196,9 +188,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """Remove and return the last (key, value) pair.
 
         Raises a `KeyError` if the MultiDict is empty.
-
-        This is optimized to drop the last item directly, as removing it cannot
-        shift the index of any other item.
         """
         if not self._items:
             msg = "popitem(): multi-mapping is empty"
@@ -278,7 +267,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """Merge another object into the multi-mapping.
 
         Keys from `other` that already exist in the multi-mapping will not be added.
-        This is optimized for batch operations.
         """
         # Get existing keys once for efficiency
         existing_keys = set(self._key_indices.keys())
@@ -308,11 +296,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         /,
         **kwargs: _V,
     ) -> None:
-        """Extend the multi-mapping with items from another object.
-
-        This is optimized for batch operations to avoid rebuilding indices
-        multiple times.
-        """
+        """Extend the multi-mapping with items from another object."""
         # Collect all new items first
         new_items = list(_yield_items(other, **kwargs))
 
