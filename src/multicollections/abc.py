@@ -16,7 +16,6 @@ from collections.abc import (
     Mapping,
     MappingView,
     MutableMapping,
-    Sequence,
 )
 from collections.abc import ItemsView as MappingItemsView
 from collections.abc import KeysView as MappingKeysView
@@ -154,49 +153,6 @@ def _yield_items(
         yield from obj
 
     yield from kwargs.items()
-
-
-def _updated_items(
-    items: Iterable[tuple[_K, _V]],
-    updates: Iterable[tuple[_K, _V]],
-    /,
-    positions: Mapping[_K, Sequence[int]] | None = None,
-) -> list[tuple[_K, _V]]:
-    """Return `items` updated with `updates`.
-
-    Values from `updates` replace the items with the same key one by one, at the
-    positions those items already occupy. Any surplus values are appended at the end,
-    and any items left over for an updated key are dropped.
-
-    `positions` may be given if the indices of each key in `items` are already known.
-    """
-    ret = list(items)
-
-    if positions is None:
-        indices_by_key: dict[_K, list[int]] = {}
-        for i, (key, _) in enumerate(ret):
-            if (indices := indices_by_key.get(key)) is None:
-                indices_by_key[key] = indices = []
-            indices.append(i)
-        positions = indices_by_key
-
-    appended: list[tuple[_K, _V]] = []
-    replaced: dict[_K, int] = {}
-    for key, value in updates:
-        i = replaced.get(key, 0)
-        replaced[key] = i + 1
-        if (indices := positions.get(key)) is not None and i < len(indices):
-            ret[indices[i]] = (key, value)
-        else:
-            appended.append((key, value))
-
-    dropped = {
-        index for key, i in replaced.items() for index in positions.get(key, ())[i:]
-    }
-    if dropped:
-        ret = [item for i, item in enumerate(ret) if i not in dropped]
-
-    return ret + appended
 
 
 class MultiMapping(Mapping[_K, _V]):
