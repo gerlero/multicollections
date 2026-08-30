@@ -63,19 +63,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         Raises a `KeyError` if the key is not found and no default is provided.
         """
-        if (indices := self._key_indices.get(key)) is None:
-            raise KeyError(key)
-        return self._items[indices[0]][1]
-
-    @override
-    def __getitem__(self, key: _K, /) -> _V:
-        """Get the first value for a key.
-
-        Raises a `KeyError` if the key is not found.
-        """
-        if (indices := self._key_indices.get(key)) is None:
-            raise KeyError(key)
-        return self._items[indices[0]][1]
+        return self._items[self._key_indices[key][0]][1]
 
     @override
     def __contains__(self, key: object, /) -> bool:
@@ -135,9 +123,8 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         Replaces the first value for a key if it exists; otherwise, it adds a new item.
         Any other items with the same key are removed.
         """
-        if key in self._key_indices:
+        if (indices := self._key_indices.get(key)) is not None:
             # Key exists, replace first occurrence and remove others
-            indices = self._key_indices[key]
             first_index = indices[0]
 
             # Update the first occurrence
@@ -159,25 +146,20 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         """Rebuild the key indices after items list has been modified."""
         self._key_indices = {}
         for i, (key, _) in enumerate(self._items):
-            if (indices_list := self._key_indices.get(key)) is None:
-                self._key_indices[key] = indices_list = []
-            indices_list.append(i)
+            self._key_indices.setdefault(key, []).append(i)
 
     @override
     def add(self, key: _K, value: _V, /) -> None:
         """Add a new value for a key."""
         index = len(self._items)
         self._items.append((key, value))
-        if (indices_list := self._key_indices.get(key)) is None:
-            self._key_indices[key] = indices_list = []
-        indices_list.append(index)
+        self._key_indices.setdefault(key, []).append(index)
 
     @override
     @with_default
     def popone(self, key: _K, /) -> _V:
         """Remove and return the first value for a key."""
-        if (indices := self._key_indices.get(key)) is None:
-            raise KeyError(key)
+        indices = self._key_indices[key]
 
         first_index = indices[0]
         value = self._items[first_index][1]
@@ -195,8 +177,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     @with_default
     def popall(self, key: _K, /) -> list[_V]:
         """Remove and return all values for a key."""
-        if (indices_to_remove := self._key_indices.get(key)) is None:
-            raise KeyError(key)
+        indices_to_remove = self._key_indices[key]
 
         ret = [self._items[i][1] for i in indices_to_remove]
 
@@ -237,8 +218,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         Raises a `KeyError` if the key is not found.
         """
-        if (indices_to_remove := self._key_indices.get(key)) is None:
-            raise KeyError(key)
+        indices_to_remove = self._key_indices[key]
 
         # Mark items for removal
         for idx in indices_to_remove:
@@ -319,9 +299,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
-            if (indices_list := self._key_indices.get(key)) is None:
-                self._key_indices[key] = indices_list = []
-            indices_list.append(i)
+            self._key_indices.setdefault(key, []).append(i)
 
     @override
     def extend(
@@ -347,9 +325,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
         # Update indices incrementally for better performance
         for i, (key, _) in enumerate(new_items, start_index):
-            if (indices_list := self._key_indices.get(key)) is None:
-                self._key_indices[key] = indices_list = []
-            indices_list.append(i)
+            self._key_indices.setdefault(key, []).append(i)
 
     def copy(self) -> MultiDict[_K, _V]:
         """Return a shallow copy of the MultiDict."""
@@ -370,23 +346,25 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         length and for each item in the `MultiDict`, the corresponding key in the
         `Mapping` has the same value.
         """
-        if isinstance(other, MultiDict):
-            return self._items == other._items
-        if isinstance(other, MultiMapping):
-            return len(self._items) == len(other) and all(
-                i1 == i2 for i1, i2 in zip(self._items, other.items(), strict=True)
-            )
-        if isinstance(other, Mapping):
-            if len(self) != len(other):
-                return False
-            try:
-                for k, v in self._items:
-                    if other[k] != v:
-                        return False
-            except KeyError:
-                return False
-            return True
-        return NotImplemented
+        match other:
+            case MultiDict():
+                return self._items == other._items
+            case MultiMapping():
+                return len(self._items) == len(other) and all(
+                    i1 == i2 for i1, i2 in zip(self._items, other.items(), strict=True)
+                )
+            case Mapping():
+                if len(self) != len(other):
+                    return False
+                try:
+                    for k, v in self._items:
+                        if other[k] != v:
+                            return False
+                except KeyError:
+                    return False
+                return True
+            case _:
+                return NotImplemented
 
     @override
     def __repr__(self) -> str:
