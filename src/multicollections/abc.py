@@ -7,7 +7,7 @@ import functools
 import itertools
 import sys
 from abc import abstractmethod
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import (
     Callable,
     Collection,
@@ -389,13 +389,34 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         Values for keys that already exist replace them in place, keeping their
         positions; values for new keys are appended.
         """
-        updates = list(_yield_items(other, **kwargs))
-        if not updates:
-            return
+        replacements: dict[_K, deque[_V]] = {}
+        remaining: dict[_K, int] = {}
+        appended: list[tuple[_K, _V]] = []
 
-        items = _updated_items(self.items(), updates)
-        self.clear()
-        self.extend(items)
+        for key, value in _yield_items(other, **kwargs):
+            slots = remaining.get(key)
+            if slots is None:
+                slots = len(self.getall(key, ()))
+
+            if slots:
+                replacements.setdefault(key, deque()).append(value)
+                slots -= 1
+            else:
+                appended.append((key, value))
+
+            remaining[key] = slots
+
+        for _ in range(len(self)):
+            key = next(iter(self))
+            value = self.popone(key)
+
+            values = replacements.get(key)
+            if values is None:
+                self.add(key, value)
+            elif values:
+                self.add(key, values.popleft())
+
+        self.extend(appended)
 
 
 try:
