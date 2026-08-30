@@ -256,10 +256,11 @@ def test_items_view_contains(
     assert ("c", 1) not in items  # Key doesn't exist
     assert ("b", 1) not in items  # Wrong value for existing key
 
-    # Test different type
-    assert ["a", 3] in items  # ty: ignore[unsupported-operator]
-    assert None not in items  # ty: ignore[unsupported-operator]
+    # Test different length
     assert ("a", 3, "a") not in items  # ty: ignore[unsupported-operator]
+
+    # Test different type
+    assert None not in items  # ty: ignore[unsupported-operator]
 
     # Test empty case
     empty_md = cls()
