@@ -322,22 +322,20 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
         Raises a `KeyError` if the multi-mapping is empty.
         """
-        keys = list(self)
-        if not keys:
+        if not self:
             msg = "popitem(): multi-mapping is empty"
             raise KeyError(msg)
-        key = keys[-1]
 
-        values = self.getall(key)
-        if len(values) == 1:
-            # Only item for this key, so `popone` removes this one.
+        for key in self:
+            pass
+        if len(self.getall(key)) == 1:
             return key, self.popone(key)
 
-        # `popone` would remove an earlier item for the same key, so rebuild instead.
         items = list(self.items())
         value = items.pop()[1]
         self.clear()
         self.extend(items)
+
         return key, value
 
     @override
