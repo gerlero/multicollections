@@ -66,7 +66,7 @@ class ItemsView(MappingItemsView[_K, _V], MultiMappingView):
     def __contains__(self, item: object, /) -> bool:
         """Check if the item is in the multi-mapping."""
         match item:
-            case key, value:
+            case tuple((key, value)):
                 try:
                     values = self._mapping.getall(key)
                 except KeyError:
