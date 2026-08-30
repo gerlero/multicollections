@@ -144,8 +144,8 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     def add(self, key: _K, value: _V, /) -> None:
         """Add a new value for a key."""
         index = len(self._items)
-        self._items.append((key, value))
         self._key_indices.setdefault(key, []).append(index)
+        self._items.append((key, value))
 
     @override
     @with_default

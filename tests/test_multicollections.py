@@ -1085,6 +1085,20 @@ def test_copy_method(cls: type[MultiDict[str, int] | multidict.MultiDict[int]]) 
     assert "e" not in md
 
 
+def test_exception_safety() -> None:
+    """Test for basic exception safety."""
+
+    class BadKey:
+        def __hash__(self) -> int:
+            raise RuntimeError("I'm a bad key")
+
+    md: MultiDict[str | BadKey, str] = MultiDict([("good", "value")])
+    with pytest.raises(RuntimeError):
+        md.add(BadKey(), "value")
+
+    assert list(md.items()) == [("good", "value")]
+
+
 # Additional tests for uncovered lines
 def test_empty_init_no_rebuild() -> None:
     """Test that empty MultiDict initialization doesn't call _rebuild_indices."""
