@@ -145,12 +145,13 @@ def with_default(
 def _yield_items(
     obj: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]], /, **kwargs: _V
 ) -> Iterable[tuple[_K, _V]]:
-    if isinstance(obj, MappingLike):
-        yield from obj.items()
-    elif isinstance(obj, SupportsKeysAndGetItem):
-        yield from ((k, obj[k]) for k in obj.keys())  # noqa: SIM118
-    else:
-        yield from obj
+    match obj:
+        case MappingLike():
+            yield from obj.items()
+        case SupportsKeysAndGetItem():
+            yield from ((k, obj[k]) for k in obj.keys())  # noqa: SIM118
+        case _:
+            yield from obj
 
     yield from kwargs.items()
 

@@ -6,13 +6,8 @@ import importlib.metadata
 from collections.abc import Iterable, Iterator, Mapping
 from typing import TypeVar, overload
 
-from ._typing import SupportsKeysAndGetItem, override
-from .abc import (
-    MultiMapping,
-    MutableMultiMapping,
-    _yield_items,
-    with_default,
-)
+from ._typing import MappingLike, SupportsKeysAndGetItem, override
+from .abc import MultiMapping, MutableMultiMapping, with_default
 
 __version__ = importlib.metadata.version("multicollections")
 
@@ -36,10 +31,16 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         **kwargs: _V,
     ) -> None:
         """Create a MultiDict."""
-        self._items: list[tuple[_K, _V]] = list(_yield_items(iterable, **kwargs))
-        self._key_indices: dict[_K, list[int]] = {}
+        match iterable:
+            case MappingLike():
+                self._items = list(iterable.items())
+            case SupportsKeysAndGetItem():
+                self._items = [(k, iterable[k]) for k in iterable.keys()]  # noqa: SIM118
+            case _:
+                self._items = list(iterable)
+        self._items.extend(kwargs.items())
 
-        # Build indices in one pass for better performance
+        self._key_indices: dict[_K, list[int]] = {}
         if self._items:
             self._rebuild_indices()
 
