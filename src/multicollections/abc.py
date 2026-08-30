@@ -20,12 +20,20 @@ from collections.abc import (
 from collections.abc import ItemsView as MappingItemsView
 from collections.abc import KeysView as MappingKeysView
 from collections.abc import ValuesView as MappingValuesView
-from typing import Any, TypeVar, overload
+from typing import TypeVar, overload
 
-from ._typing import MappingLike, MethodWithDefault, SupportsKeysAndGetItem, override
+from ._typing import (
+    MappingLike,
+    MethodWithDefault,
+    SupportsGetItem,
+    SupportsKeysAndGetItem,
+    override,
+)
 
 _K = TypeVar("_K")
+_K_co = TypeVar("_K_co", covariant=True)
 _V = TypeVar("_V")
+_V_co = TypeVar("_V_co", covariant=True)
 _D = TypeVar("_D")
 _Self = TypeVar("_Self")
 
@@ -33,9 +41,9 @@ _Self = TypeVar("_Self")
 class MultiMappingView(MappingView):
     """Base class for MultiMapping views."""
 
-    _mapping: MultiMapping[Any, Any]
+    _mapping: MultiMapping
 
-    def __init__(self, mapping: MultiMapping[Any, Any], /) -> None:
+    def __init__(self, mapping: MultiMapping, /) -> None:
         """Initialize the view with the given mapping."""
         super().__init__(mapping)
 
@@ -45,7 +53,7 @@ class MultiMappingView(MappingView):
         return len(self._mapping)
 
 
-class KeysView(MappingKeysView[_K], MultiMappingView):
+class KeysView(MappingKeysView[_K_co], MultiMappingView):
     """View for the keys in a MultiMapping."""
 
     @override
@@ -54,12 +62,12 @@ class KeysView(MappingKeysView[_K], MultiMappingView):
         return key in self._mapping
 
     @override
-    def __iter__(self) -> Iterator[_K]:
+    def __iter__(self) -> Iterator[_K_co]:
         """Return an iterator over the keys."""
         return iter(self._mapping)
 
 
-class ItemsView(MappingItemsView[_K, _V], MultiMappingView):
+class ItemsView(MappingItemsView[_K_co, _V_co], MultiMappingView):
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
@@ -76,9 +84,9 @@ class ItemsView(MappingItemsView[_K, _V], MultiMappingView):
                 return False
 
     @override
-    def __iter__(self) -> Iterator[tuple[_K, _V]]:
+    def __iter__(self) -> Iterator[tuple[_K_co, _V_co]]:
         """Return an iterator over the items (key-value pairs)."""
-        counts: defaultdict[_K, int] = defaultdict(int)
+        counts: defaultdict[_K_co, int] = defaultdict(int)
         for k in self._mapping:
             yield (
                 k,
@@ -89,7 +97,7 @@ class ItemsView(MappingItemsView[_K, _V], MultiMappingView):
             counts[k] += 1
 
 
-class ValuesView(MappingValuesView[_V], MultiMappingView):
+class ValuesView(MappingValuesView[_V_co], MultiMappingView):
     """View for the values in a MultiMapping."""
 
     @override
@@ -98,7 +106,7 @@ class ValuesView(MappingValuesView[_V], MultiMappingView):
         return any(v == value for v in self)
 
     @override
-    def __iter__(self) -> Iterator[_V]:
+    def __iter__(self) -> Iterator[_V_co]:
         """Return an iterator over the values."""
         yield from (v for _, v in self._mapping.items())
 
@@ -156,7 +164,7 @@ def _yield_items(
     yield from kwargs.items()
 
 
-class MultiMapping(Mapping[_K, _V]):
+class MultiMapping(Mapping[_K, _V_co]):
     """Abstract base class for multi-mapping collections.
 
     A multi-mapping is a mapping that can hold multiple values for the same key.
@@ -165,7 +173,7 @@ class MultiMapping(Mapping[_K, _V]):
 
     @abstractmethod
     @with_default
-    def getall(self, key: _K, /) -> Collection[_V]:
+    def getall(self, key: _K, /) -> Collection[_V_co]:
         """Get all values for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -188,7 +196,7 @@ class MultiMapping(Mapping[_K, _V]):
         raise NotImplementedError  # pragma: no cover
 
     @with_default
-    def getone(self, key: _K, /) -> _V:
+    def getone(self, key: _K, /) -> _V_co:
         """Get the first value for a key.
 
         Raises a `KeyError` if the key is not found and no default is provided.
@@ -200,7 +208,7 @@ class MultiMapping(Mapping[_K, _V]):
             raise RuntimeError(msg) from e
 
     @override
-    def __getitem__(self, key: _K, /) -> _V:
+    def __getitem__(self, key: _K, /) -> _V_co:
         """Get the first value for a key.
 
         Raises a `KeyError` if the key is not found.
@@ -213,12 +221,12 @@ class MultiMapping(Mapping[_K, _V]):
         return KeysView(self)
 
     @override
-    def items(self) -> ItemsView[_K, _V]:
+    def items(self) -> ItemsView[_K, _V_co]:
         """Return a view of the items (key-value pairs) in the MultiMapping."""
         return ItemsView(self)
 
     @override
-    def values(self) -> ValuesView[_V]:
+    def values(self) -> ValuesView[_V_co]:
         """Return a view of the values in the MultiMapping."""
         return ValuesView(self)
 
@@ -309,6 +317,30 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         for key in set(self.keys()):
             self.popall(key)
 
+    @overload
+    def extend(
+        self, other: SupportsKeysAndGetItem[_K, _V] = ..., /, **kwargs: _V
+    ) -> None: ...
+
+    @overload
+    def extend(
+        self: SupportsGetItem[str, _V],
+        other: SupportsKeysAndGetItem[str, _V] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
+
+    @overload
+    def extend(self, other: Iterable[tuple[_K, _V]] = ..., /) -> None: ...
+
+    @overload
+    def extend(
+        self: SupportsGetItem[str, _V],
+        other: Iterable[tuple[str, _V]] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
+
     def extend(
         self,
         other: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
@@ -318,6 +350,28 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         """Extend the multi-mapping with items from another object."""
         for key, value in _yield_items(other, **kwargs):
             self.add(key, value)
+
+    @overload
+    def merge(self, other: SupportsKeysAndGetItem[_K, _V] = ..., /) -> None: ...
+
+    @overload
+    def merge(
+        self: SupportsGetItem[str, _V],
+        other: SupportsKeysAndGetItem[str, _V] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
+
+    @overload
+    def merge(self, other: Iterable[tuple[_K, _V]] = ..., /) -> None: ...
+
+    @overload
+    def merge(
+        self: SupportsGetItem[str, _V],
+        other: Iterable[tuple[str, _V]] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
 
     def merge(
         self,
@@ -333,6 +387,28 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         for key, value in _yield_items(other, **kwargs):
             if key not in existing_keys:
                 self.add(key, value)
+
+    @overload
+    def update(self, other: SupportsKeysAndGetItem[_K, _V] = ..., /) -> None: ...
+
+    @overload
+    def update(
+        self: SupportsGetItem[str, _V],
+        other: SupportsKeysAndGetItem[str, _V] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
+
+    @overload
+    def update(self, other: Iterable[tuple[_K, _V]] = ..., /) -> None: ...
+
+    @overload
+    def update(
+        self: SupportsGetItem[str, _V],
+        other: Iterable[tuple[str, _V]] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
 
     @override
     def update(

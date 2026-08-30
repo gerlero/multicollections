@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 
 _Self = TypeVar("_Self")
+_K = TypeVar("_K")
 _K_contra = TypeVar("_K_contra", contravariant=True)
 _V_co = TypeVar("_V_co", covariant=True)
 _D = TypeVar("_D")
@@ -33,7 +34,8 @@ class MethodWithDefault(Protocol[_K_contra, _V_co]):
     def __call__(self: _Self, key: _K_contra, /, default: _D) -> _V_co | _D: ...
 
 
-_K = TypeVar("_K")
+class SupportsGetItem(Protocol[_K_contra, _V_co]):
+    def __getitem__(self, key: _K_contra, /) -> _V_co: ...
 
 
 @runtime_checkable
