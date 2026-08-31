@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 from multicollections._typing import MappingLike, SupportsKeysAndGetItem, override
 from multicollections.abc import MutableMultiMapping, with_default
@@ -70,14 +70,3 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
     @override
     def __len__(self) -> int:
         return len(self._items)
-
-
-class BasicDictWrapper(Generic[_K, _V]):
-    def __init__(self, data: dict[_K, _V]) -> None:
-        self._data = data
-
-    def keys(self) -> Iterable[_K]:
-        return self._data.keys()
-
-    def __getitem__(self, key: _K, /) -> _V:
-        return self._data[key]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping, MutableMapping
 
 import multidict
 import pytest
@@ -8,18 +8,27 @@ import pytest
 import multicollections
 from multicollections import MultiDict
 from multicollections._typing import MappingLike, SupportsKeysAndGetItem
-from multicollections.abc import MutableMultiMapping
+from multicollections.abc import MultiMapping, MutableMultiMapping
 
-from .minimalimpl import BasicDictWrapper, ListMultiDict
+from .minimalimpl import ListMultiDict
 
 
 def test_has_version() -> None:
     assert hasattr(multicollections, "__version__")
 
 
-def test_external_implements_abc() -> None:
-    md = multidict.MultiDict([("a", 1), ("b", 2)])
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_implements_abc(cls) -> None:
+    assert issubclass(cls, MutableMultiMapping)
+    assert issubclass(cls, MultiMapping)
+    assert issubclass(cls, MutableMapping)
+    assert issubclass(cls, Mapping)
+
+    md = cls([("a", 1), ("b", 2)])
     assert isinstance(md, MutableMultiMapping)
+    assert isinstance(md, MultiMapping)
+    assert isinstance(md, MutableMapping)
+    assert isinstance(md, Mapping)
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
@@ -703,13 +712,59 @@ def test_update_replaces_in_place(
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, dict])
-def test_update_method_protocol(
+def test_update_method_from_duck_mapping(
     cls: type[MultiDict | ListMultiDict | dict],
 ) -> None:
+    class DuckMapping:
+        def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
+            self._dict = dict(items)
+
+        def __getitem__(self, key: str) -> int:
+            return self._dict[key]
+
+        def keys(self) -> Iterable[str]:
+            return self._dict.keys()
+
+    assert issubclass(DuckMapping, SupportsKeysAndGetItem)
+    assert not issubclass(DuckMapping, MappingLike)
+    assert not issubclass(DuckMapping, Mapping)
+
     d = cls([("a", 1)])
-    other = BasicDictWrapper({"a": 999, "b": 2})
-    assert isinstance(other, SupportsKeysAndGetItem)
-    d.update(other)
+    duck = DuckMapping({"a": 999, "b": 2})
+
+    assert isinstance(duck, SupportsKeysAndGetItem)
+    d.update(duck)
+    assert len(d) == 2
+    assert d["a"] == 999
+    assert d["b"] == 2
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_update_method_from_duck_multi_mapping(
+    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
+) -> None:
+    class DuckMultiMapping:
+        def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
+            self._items = list(items)
+
+        def __getitem__(self, key: str) -> int:
+            assert False
+
+        def keys(self) -> Iterable[str]:
+            assert False
+
+        def items(self) -> Iterable[tuple[str, int]]:
+            return self._items
+
+    assert issubclass(DuckMultiMapping, MappingLike)
+    assert issubclass(DuckMultiMapping, SupportsKeysAndGetItem)
+    assert not issubclass(DuckMultiMapping, Mapping)
+
+    d = cls([("a", 1)])
+    duck = DuckMultiMapping([("a", 999), ("b", 2)])
+
+    assert isinstance(duck, MappingLike)
+    d.update(duck)
     assert len(d) == 2
     assert d["a"] == 999
     assert d["b"] == 2
