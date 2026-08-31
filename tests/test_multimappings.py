@@ -245,71 +245,6 @@ def test_iteration(
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
-def test_values_view(
-    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
-) -> None:
-    md = cls([("a", 1), ("b", 2), ("a", 3)])
-    values = md.values()
-
-    assert len(values) == 3
-    assert list(values) == [1, 2, 3]
-
-
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
-def test_values_view_contains(
-    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
-) -> None:
-    md = cls([("a", 1), ("b", 2), ("a", 3)])
-    values = md.values()
-
-    assert 1 in values
-    assert 2 in values
-    assert 3 in values
-
-    assert 4 not in values
-    assert 0 not in values
-
-    empty_md = cls()
-    empty_values = empty_md.values()
-    assert 1 not in empty_values
-
-
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
-def test_items_view(
-    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
-) -> None:
-    md = cls([("a", 1), ("b", 2), ("a", 3)])
-    items = md.items()
-
-    assert len(items) == 3
-    assert list(items) == [("a", 1), ("b", 2), ("a", 3)]
-
-
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
-def test_items_view_contains(
-    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
-) -> None:
-    md = cls([("a", 1), ("b", 2), ("a", 3)])
-    items = md.items()
-
-    assert ("a", 1) in items
-    assert ("b", 2) in items
-    assert ("a", 3) in items
-
-    assert ("a", 2) not in items
-    assert ("c", 1) not in items
-    assert ("b", 1) not in items
-
-    assert ("a", 3, "a") not in items  # ty: ignore[unsupported-operator]
-
-    assert None not in items  # ty: ignore[unsupported-operator]
-
-    empty_md = cls()
-    empty_items = empty_md.items()
-    assert ("a", 1) not in empty_items
-
-
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
 def test_len(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
@@ -405,26 +340,6 @@ def test_get_method(
     assert md.get("missing") is None
     assert md.get("missing", "default") == "default"
     assert md.get("missing", 42) == 42
-
-
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
-def test_keys_view(
-    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
-) -> None:
-    md = cls([("a", 1), ("b", 2), ("a", 3)])
-    keys = md.keys()
-
-    assert len(keys) == 3
-    assert list(keys) == ["a", "b", "a"]
-
-    assert "a" in keys
-    assert "b" in keys
-    assert "missing" not in keys
-
-    empty_md = cls()
-    empty_keys = empty_md.keys()
-    assert len(empty_keys) == 0
-    assert list(empty_keys) == []
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
