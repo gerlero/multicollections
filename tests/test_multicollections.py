@@ -18,8 +18,6 @@ def test_has_version() -> None:
 
 
 def test_external_implements_abc() -> None:
-    """Test that multidict.MultiDict is registered as implementing our
-    abc.MutableMultiMapping interface."""
     md = multidict.MultiDict([("a", 1), ("b", 2)])
     assert isinstance(md, MutableMultiMapping)
 
@@ -39,12 +37,11 @@ def test_empty_creation(
 def test_creation_from_pairs(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test creating MultiDict from list of pairs."""
     pairs = [("a", 1), ("b", 2), ("a", 3)]
     md = cls(pairs)
 
     assert len(md) == 3
-    assert md["a"] == 1  # First value for duplicate key
+    assert md["a"] == 1
     assert md["b"] == 2
     assert list(md.items()) == pairs
     assert list(md) == ["a", "b", "a"]
@@ -63,7 +60,6 @@ def test_creation_from_pairs(
 def test_creation_from_dict(
     cls: type[MultiDict | ListMultiDict | dict | multidict.MultiDict],
 ) -> None:
-    """Test creating MultiDict from regular dict."""
     d = {"x": 10, "y": 20, "z": 30}
     md = cls(d)
 
@@ -79,8 +75,6 @@ def test_creation_from_dict(
 def test_creation_from_duck_mapping(
     cls: type[MultiDict | ListMultiDict | dict],
 ) -> None:
-    """Test creating MultiDict from a duck-typed mapping."""
-
     class DuckMapping:
         def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
             self._dict = dict(items)
@@ -110,8 +104,6 @@ def test_creation_from_duck_mapping(
 def test_creation_from_duck_multi_mapping(
     cls: type[MultiDict | ListMultiDict],
 ) -> None:
-    """Test creating MultiDict from a duck-typed mapping."""
-
     class DuckMultiMapping:
         def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
             self._items = list(items)
@@ -144,7 +136,6 @@ def test_creation_from_duck_multi_mapping(
 def test_creation_with_kwargs(
     cls: type[MultiDict | ListMultiDict | dict | multidict.MultiDict],
 ) -> None:
-    """Test creating MultiDict with keyword arguments."""
     md = cls(a=1, b=2, c=3)
 
     assert len(md) == 3
@@ -157,7 +148,6 @@ def test_creation_with_kwargs(
 def test_creation_mixed(
     cls: type[MultiDict | ListMultiDict | dict | multidict.MultiDict],
 ) -> None:
-    """Test creating MultiDict with both iterable and kwargs."""
     pairs = [("a", 1), ("b", 2)]
     md = cls(pairs, c=3, d=4)
 
@@ -172,10 +162,9 @@ def test_creation_mixed(
 def test_getitem(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test __getitem__ behavior."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
 
-    assert md["a"] == 1  # First value
+    assert md["a"] == 1
     assert md["b"] == 2
 
     with pytest.raises(KeyError):
@@ -186,7 +175,6 @@ def test_getitem(
 def test_setitem_new_key(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test __setitem__ with new key."""
     md = cls()
     md["new"] = "value"
 
@@ -199,11 +187,9 @@ def test_setitem_new_key(
 def test_setitem_existing_key(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test __setitem__ with existing key."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     md["a"] = 99
 
-    # Should replace and remove all duplicates
     assert len(md) == 2
     assert md["a"] == 99
     assert list(md.items()) == [("a", 99), ("b", 2)]
@@ -213,14 +199,13 @@ def test_setitem_existing_key(
 def test_add_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test add() method."""
     md = cls()
     md.add("key", "value1")
     md.add("key", "value2")
     md.add("other", "value3")
 
     assert len(md) == 3
-    assert md["key"] == "value1"  # First value
+    assert md["key"] == "value1"
     assert md["other"] == "value3"
     assert list(md.items()) == [
         ("key", "value1"),
@@ -233,9 +218,8 @@ def test_add_method(
 def test_delitem(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test __delitem__ behavior."""
     md = cls([("a", 1), ("b", 2), ("a", 3), ("c", 4)])
-    del md["a"]  # Should remove all 'a' items
+    del md["a"]
 
     assert len(md) == 2
     assert list(md.items()) == [("b", 2), ("c", 4)]
@@ -248,13 +232,11 @@ def test_delitem(
 def test_iteration(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test iteration over keys."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     keys = list(md)
 
     assert keys == ["a", "b", "a"]
 
-    # Test that iteration yields duplicate keys
     key_count: dict[str, int] = {}
     for key in md:
         key_count[key] = key_count.get(key, 0) + 1
@@ -266,7 +248,6 @@ def test_iteration(
 def test_values_view(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test values() view."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     values = md.values()
 
@@ -278,20 +259,16 @@ def test_values_view(
 def test_values_view_contains(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test values() view __contains__ method."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     values = md.values()
 
-    # Test containment for existing values
     assert 1 in values
     assert 2 in values
     assert 3 in values
 
-    # Test containment for non-existing values
     assert 4 not in values
     assert 0 not in values
 
-    # Test empty case
     empty_md = cls()
     empty_values = empty_md.values()
     assert 1 not in empty_values
@@ -301,7 +278,6 @@ def test_values_view_contains(
 def test_items_view(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test items() view."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     items = md.items()
 
@@ -313,27 +289,21 @@ def test_items_view(
 def test_items_view_contains(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test items() view __contains__ method."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     items = md.items()
 
-    # Test containment for existing items
     assert ("a", 1) in items
     assert ("b", 2) in items
     assert ("a", 3) in items
 
-    # Test containment for non-existing items
-    assert ("a", 2) not in items  # Key exists but wrong value
-    assert ("c", 1) not in items  # Key doesn't exist
-    assert ("b", 1) not in items  # Wrong value for existing key
+    assert ("a", 2) not in items
+    assert ("c", 1) not in items
+    assert ("b", 1) not in items
 
-    # Test different length
     assert ("a", 3, "a") not in items  # ty: ignore[unsupported-operator]
 
-    # Test different type
     assert None not in items  # ty: ignore[unsupported-operator]
 
-    # Test empty case
     empty_md = cls()
     empty_items = empty_md.items()
     assert ("a", 1) not in empty_items
@@ -343,38 +313,32 @@ def test_items_view_contains(
 def test_len(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test len() behavior."""
     md = cls()
     assert len(md) == 0
 
     md.add("a", 1)
     assert len(md) == 1
 
-    md.add("a", 2)  # Duplicate key
+    md.add("a", 2)
     assert len(md) == 2
 
     md["b"] = 3
     assert len(md) == 3
 
-    del md["a"]  # Removes both 'a' items
+    del md["a"]
     assert len(md) == 1
 
 
 def test_repr() -> None:
-    """Test __repr__ method."""
-    # Test empty MultiDict
     md_empty = MultiDict()
     assert repr(md_empty) == "MultiDict([])"
 
-    # Test MultiDict with single item
     md_single = MultiDict([("a", 1)])
     assert repr(md_single) == "MultiDict([('a', 1)])"
 
-    # Test MultiDict with multiple items including duplicates
     md_multi = MultiDict([("a", 1), ("b", 2), ("a", 3)])
     assert repr(md_multi) == "MultiDict([('a', 1), ('b', 2), ('a', 3)])"
 
-    # Test that repr can be used to recreate equivalent objects
     original = MultiDict([("x", "hello"), ("y", 42), ("x", "world")])
     repr_str = repr(original)
     recreated = eval(repr_str)
@@ -385,7 +349,6 @@ def test_repr() -> None:
 def test_contains(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test __contains__ method."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
 
     assert "a" in md
@@ -393,7 +356,6 @@ def test_contains(
     assert "missing" not in md
     assert None not in md
 
-    # Test with empty MultiDict
     empty_md = cls()
     assert "any" not in empty_md
 
@@ -402,18 +364,14 @@ def test_contains(
 def test_getone_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test getone() method."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
 
-    # Test getting first value for key with multiple values
-    assert md.getone("a") == 1  # First value
+    assert md.getone("a") == 1
     assert md.getone("b") == 2
 
-    # Test with default value
     assert md.getone("missing", "default") == "default"
     assert md.getone("missing", None) is None
 
-    # Test KeyError without default
     with pytest.raises(KeyError):
         md.getone("missing")
 
@@ -422,19 +380,15 @@ def test_getone_method(
 def test_getall_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test getall() method."""
     md = cls([("a", 1), ("b", 2), ("a", 3), ("c", 4)])
 
-    # Test getting all values for key with multiple values
     assert md.getall("a") == [1, 3]
     assert md.getall("b") == [2]
     assert md.getall("c") == [4]
 
-    # Test with default value
     assert md.getall("missing", []) == []
     assert md.getall("missing", "default") == "default"
 
-    # Test KeyError without default
     with pytest.raises(KeyError):
         md.getall("missing")
 
@@ -443,15 +397,12 @@ def test_getall_method(
 def test_get_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test get() method."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
 
-    # Test getting first value
-    assert md.get("a") == 1  # First value
+    assert md.get("a") == 1
     assert md.get("b") == 2
 
-    # Test with default (should return default, not raise KeyError)
-    assert md.get("missing") is None  # Default None
+    assert md.get("missing") is None
     assert md.get("missing", "default") == "default"
     assert md.get("missing", 42) == 42
 
@@ -460,19 +411,16 @@ def test_get_method(
 def test_keys_view(
     cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
 ) -> None:
-    """Test keys() view."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     keys = md.keys()
 
     assert len(keys) == 3
     assert list(keys) == ["a", "b", "a"]
 
-    # Test containment
     assert "a" in keys
     assert "b" in keys
     assert "missing" not in keys
 
-    # Test empty case
     empty_md = cls()
     empty_keys = empty_md.keys()
     assert len(empty_keys) == 0
@@ -483,28 +431,23 @@ def test_keys_view(
 def test_popone_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test popone() method."""
     md = cls([("a", 1), ("b", 2), ("a", 3), ("c", 4)])
 
-    # Test popping first value for key with multiple values
     result = md.popone("a")
     assert result == 1
     assert len(md) == 3
-    assert md.getall("a") == [3]  # Only second value remains
+    assert md.getall("a") == [3]
 
-    # Test popping single value
     result = md.popone("b")
     assert result == 2
     assert len(md) == 2
     with pytest.raises(KeyError):
         md.getall("b")
 
-    # Test with default value
     result2 = md.popone("missing", "default")
     assert result2 == "default"
-    assert len(md) == 2  # No change
+    assert len(md) == 2
 
-    # Test KeyError without default
     with pytest.raises(KeyError):
         md.popone("missing")
 
@@ -513,30 +456,25 @@ def test_popone_method(
 def test_popall_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test popall() method."""
     md = cls([("a", 1), ("b", 2), ("a", 3), ("c", 4)])
 
-    # Test popping all values for key with multiple values
     result = md.popall("a")
     assert result == [1, 3]
     assert len(md) == 2
     with pytest.raises(KeyError):
         md.getall("a")
 
-    # Test popping single value
     result = md.popall("b")
     assert result == [2]
     assert len(md) == 1
 
-    # Test with default value
     result = md.popall("missing", [])
     assert result == []
-    assert len(md) == 1  # No change
+    assert len(md) == 1
 
     result2 = md.popall("missing", "default")
     assert result2 == "default"
 
-    # Test KeyError without default
     with pytest.raises(KeyError):
         md.popall("missing")
 
@@ -545,19 +483,15 @@ def test_popall_method(
 def test_pop_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test pop() method (alias for popone)."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
 
-    # Test that pop behaves like popone
     result = md.pop("a")
     assert result == 1
     assert md.getall("a") == [3]
 
-    # Test with default
     result2 = md.pop("missing", "default")
     assert result2 == "default"
 
-    # Test KeyError without default
     with pytest.raises(KeyError):
         md.pop("missing")
 
@@ -566,24 +500,20 @@ def test_pop_method(
 def test_popitem_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test popitem() method."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     original_len = len(md)
 
-    # Test popping the last item
     key, value = md.popitem()
     assert key == "a"
     assert value == 3
     assert len(md) == original_len - 1
 
-    # Test popping from single-item dict
     single_md = cls([("x", 42)])
     key, value = single_md.popitem()
     assert key == "x"
     assert value == 42
     assert len(single_md) == 0
 
-    # Test empty MultiDict
     empty_md = cls()
     with pytest.raises(KeyError):
         empty_md.popitem()
@@ -606,7 +536,6 @@ def test_popitem_removes_the_last_item(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
     items: list[tuple[str, int]],
 ) -> None:
-    """popitem() takes the last item, like dict and multidict."""
     md = cls(items)
 
     assert md.popitem() == items[-1]
@@ -617,7 +546,6 @@ def test_popitem_removes_the_last_item(
 def test_popitem_drains_in_reverse_order(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Repeated popitem() calls unwind the multi-mapping."""
     items = [("a", 1), ("b", 2), ("a", 3), ("c", 4)]
     md = cls(items)
 
@@ -629,7 +557,6 @@ def test_popitem_drains_in_reverse_order(
 def test_popitem_takes_the_last_item_for_a_repeated_key(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """The last item wins even when earlier items share its key."""
     md = cls([("a", 1), ("b", 2)])
     md.add("a", 3)
 
@@ -641,7 +568,6 @@ def test_popitem_takes_the_last_item_for_a_repeated_key(
 def test_popitem_forgets_the_key_of_the_popped_item(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Popping a key's only item removes the key itself."""
     md = cls([("a", 1), ("b", 2)])
 
     assert md.popitem() == ("b", 2)
@@ -658,13 +584,11 @@ def test_popitem_forgets_the_key_of_the_popped_item(
 def test_popitem_on_empty_raises_key_error(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """An empty multi-mapping raises KeyError, not StopIteration."""
     md = cls()
 
     with pytest.raises(KeyError):
         md.popitem()
 
-    # A leaked StopIteration would end this loop early instead of propagating.
     def drain() -> Iterator[tuple[str, int]]:
         while True:
             yield md.popitem()
@@ -678,29 +602,23 @@ def test_popitem_on_empty_raises_key_error(
 def test_setdefault_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test setdefault() method."""
     md = cls([("a", 1), ("b", 2)])
 
-    # Test existing key (should return existing value, not set)
     result = md.setdefault("a", 999)
-    assert result == 1  # Original value
-    assert md["a"] == 1  # Unchanged
-    assert len(md) == 2  # No new items added
+    assert result == 1
+    assert md["a"] == 1
+    assert len(md) == 2
 
-    # Test new key (should set and return default)
     result = md.setdefault("c", 3)
     assert result == 3
     assert md["c"] == 3
     assert len(md) == 3
 
-    # Test with None default
     result = md.setdefault("d", None)
     assert result is None
     assert md["d"] is None
     assert len(md) == 4
 
-    # Test default None (implicit)
-    # https://github.com/aio-libs/multidict/pull/1160
     result = md.setdefault("e")
     assert result is None
     assert md["e"] is None
@@ -711,7 +629,6 @@ def test_setdefault_method(
 def test_clear_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test clear() method."""
     md = cls([("a", 1), ("b", 2), ("a", 3), ("c", 4)])
 
     assert len(md) == 4
@@ -722,7 +639,6 @@ def test_clear_method(
     assert list(md.keys()) == []
     assert list(md.values()) == []
 
-    # Test clearing empty MultiDict
     empty_md = cls()
     empty_md.clear()
     assert len(empty_md) == 0
@@ -732,15 +648,12 @@ def test_clear_method(
 def test_extend_method(
     cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
 ) -> None:
-    """Test extend() method."""
     md = cls([("a", 1)])
 
-    # Test extending with pairs
     md.extend([("b", 2), ("a", 3), ("c", 4)])
     assert len(md) == 4
     assert list(md.items()) == [("a", 1), ("b", 2), ("a", 3), ("c", 4)]
 
-    # Test extending with dict
     md2 = cls([("x", 10)])
     md2.extend({"y": 20, "z": 30})
     assert len(md2) == 3
@@ -748,14 +661,12 @@ def test_extend_method(
     assert md2["y"] == 20
     assert md2["z"] == 30
 
-    # Test extending with another MultiDict
     md3 = cls([("m", 100)])
     other_md = cls([("n", 200), ("m", 300)])
     md3.extend(other_md)
     assert len(md3) == 3
     assert list(md3.items()) == [("m", 100), ("n", 200), ("m", 300)]
 
-    # Test extending with kwargs
     md4 = cls([("a", 1)])
     md4.extend(b=2, c=3)
     assert len(md4) == 3
@@ -763,7 +674,6 @@ def test_extend_method(
     assert md4["b"] == 2
     assert md4["c"] == 3
 
-    # Test extending with both iterable and kwargs
     md5 = cls()
     md5.extend([("x", 1)], y=2, z=3)
     assert len(md5) == 3
@@ -776,76 +686,67 @@ def test_extend_method(
 def test_merge_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test merge() method."""
     md = cls([("a", 1), ("b", 2)])
 
-    # Test merging with pairs (should not replace existing keys)
     md.merge([("a", 999), ("c", 3), ("d", 4)])
     assert len(md) == 4
-    assert md["a"] == 1  # Original value preserved
+    assert md["a"] == 1
     assert md["b"] == 2
-    assert md["c"] == 3  # New key added
-    assert md["d"] == 4  # New key added
+    assert md["c"] == 3
+    assert md["d"] == 4
 
-    # Test merging with dict
     md2 = cls([("x", 10), ("y", 20)])
     md2.merge({"x": 999, "z": 30})
     assert len(md2) == 3
-    assert md2["x"] == 10  # Original value preserved
+    assert md2["x"] == 10
     assert md2["y"] == 20
-    assert md2["z"] == 30  # New key added
+    assert md2["z"] == 30
 
-    # Test merging with kwargs
     md3 = cls([("a", 1)])
     md3.merge(a=999, b=2, c=3)
     assert len(md3) == 3
-    assert md3["a"] == 1  # Original value preserved
-    assert md3["b"] == 2  # New key added
-    assert md3["c"] == 3  # New key added
+    assert md3["a"] == 1
+    assert md3["b"] == 2
+    assert md3["c"] == 3
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
 def test_update_method(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test update() method."""
     md = cls([("a", 1), ("b", 2), ("a", 3)])
 
-    # Test updating with pairs (should replace existing keys)
     md.update([("a", 999), ("c", 4), ("a", 5)])
     assert len(md) == 4
-    assert md["a"] == 999  # Replaced (duplicates removed)
-    assert md["b"] == 2  # Unchanged
-    assert md["c"] == 4  # New key added
-    assert md.getall("a") == [999, 5]  # Both 'a' values present
+    assert md["a"] == 999
+    assert md["b"] == 2
+    assert md["c"] == 4
+    assert md.getall("a") == [999, 5]
     assert list(md.items()) == [("a", 999), ("b", 2), ("a", 5), ("c", 4)]
 
-    # Test updating with dict
     md2 = cls([("x", 10), ("y", 20)])
     md2.update({"x": 999, "z": 30})
     assert len(md2) == 3
-    assert md2["x"] == 999  # Replaced
-    assert md2["y"] == 20  # Unchanged
-    assert md2["z"] == 30  # New key added
+    assert md2["x"] == 999
+    assert md2["y"] == 20
+    assert md2["z"] == 30
     assert list(md2.items()) == [("x", 999), ("y", 20), ("z", 30)]
 
-    # Test updating with kwargs
     md3 = cls([("a", 1), ("b", 2)])
     md3.update(a=999, c=3)
     assert len(md3) == 3
-    assert md3["a"] == 999  # Replaced
-    assert md3["b"] == 2  # Unchanged
-    assert md3["c"] == 3  # New key added
+    assert md3["a"] == 999
+    assert md3["b"] == 2
+    assert md3["c"] == 3
     assert list(md3.items()) == [("a", 999), ("b", 2), ("c", 3)]
 
-    # Test updating with args and kwargs
     md4 = cls([("a", 1), ("b", 2)])
     md4.update([("a", 999), ("c", 3)], a=4)
     assert len(md4) == 4
-    assert md4["a"] == 999  # Replaced
-    assert md4["b"] == 2  # Unchanged
-    assert md4["c"] == 3  # New key added
-    assert md4.getall("a") == [999, 4]  # Both 'a' values present
+    assert md4["a"] == 999
+    assert md4["b"] == 2
+    assert md4["c"] == 3
+    assert md4.getall("a") == [999, 4]
     assert list(md4.items()) == [("a", 999), ("b", 2), ("c", 3), ("a", 4)]
 
 
@@ -853,43 +754,34 @@ def test_update_method(
 def test_update_replaces_in_place(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test that update() replaces existing items where they are."""
-    # An updated key keeps its position
     md = cls([("a", 1), ("b", 2), ("c", 3)])
     md.update([("b", 99)])
     assert list(md.items()) == [("a", 1), ("b", 99), ("c", 3)]
 
-    # Same result as assigning the key directly
     md2 = cls([("a", 1), ("b", 2), ("c", 3)])
     md2["b"] = 99
     assert list(md2.items()) == list(md.items())
 
-    # Duplicates of an updated key are dropped, not moved to the end
     md3 = cls([("a", 1), ("b", 2), ("b", 22), ("c", 3)])
     md3.update([("b", 99)])
     assert list(md3.items()) == [("a", 1), ("b", 99), ("c", 3)]
 
-    # Extra values fill the remaining items for the key before being appended
     md4 = cls([("a", 1), ("b", 2), ("b", 22), ("c", 3)])
     md4.update([("b", 99), ("b", 100), ("b", 101)])
     assert list(md4.items()) == [("a", 1), ("b", 99), ("b", 100), ("c", 3), ("b", 101)]
 
-    # New keys are appended in the order given, after the existing items
     md5 = cls([("a", 1), ("b", 2)])
     md5.update([("z", 9), ("b", 99), ("y", 8)])
     assert list(md5.items()) == [("a", 1), ("b", 99), ("z", 9), ("y", 8)]
 
-    # The values of a repeated key are consumed in the order given
     md6 = cls([("a", 1), ("b", 2)])
     md6.update([("b", 5), ("a", 4), ("b", 6), ("a", 7)])
     assert list(md6.items()) == [("a", 4), ("b", 5), ("b", 6), ("a", 7)]
 
-    # Updating an empty multi-mapping just adds the items
     md7 = cls()
     md7.update([("a", 1), ("a", 2)])
     assert list(md7.items()) == [("a", 1), ("a", 2)]
 
-    # An empty update leaves the items untouched
     md8 = cls([("a", 1), ("b", 2), ("a", 3)])
     md8.update()
     assert list(md8.items()) == [("a", 1), ("b", 2), ("a", 3)]
@@ -899,38 +791,33 @@ def test_update_replaces_in_place(
 def test_update_method_protocol(
     cls: type[MultiDict | ListMultiDict | dict],
 ) -> None:
-    """Test updating with an object with just keys() and __getitem__()."""
     d = cls([("a", 1)])
     other = BasicDictWrapper({"a": 999, "b": 2})
     assert isinstance(other, SupportsKeysAndGetItem)
     d.update(other)
     assert len(d) == 2
-    assert d["a"] == 999  # Replaced
-    assert d["b"] == 2  # New key added
+    assert d["a"] == 999
+    assert d["b"] == 2
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
 def test_edge_cases_none_values(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test edge cases with None values."""
     md = cls()
 
-    # Test adding None values
     md.add("key", None)
     md.add("key", "value")
     md.add("other", None)
 
     assert len(md) == 3
-    assert md["key"] is None  # First value
+    assert md["key"] is None
     assert md.getall("key") == [None, "value"]
     assert md["other"] is None
 
-    # Test setting None value
     md["new"] = None
     assert md["new"] is None
 
-    # Test None in contains
     assert "key" in md
     assert "other" in md
     assert "new" in md
@@ -940,17 +827,14 @@ def test_edge_cases_none_values(
 def test_edge_cases_empty_operations(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test edge cases with empty MultiDict operations."""
     md = cls()
 
-    # Test operations on empty dict
     assert len(md) == 0
     assert list(md) == []
     assert list(md.items()) == []
     assert list(md.values()) == []
     assert list(md.keys()) == []
 
-    # Test get operations on empty dict
     with pytest.raises(KeyError):
         _ = md["missing"]
 
@@ -963,7 +847,6 @@ def test_edge_cases_empty_operations(
     assert md.get("missing") is None
     assert md.get("missing", "default") == "default"
 
-    # Test pop operations on empty dict
     with pytest.raises(KeyError):
         md.popone("missing")
 
@@ -973,7 +856,6 @@ def test_edge_cases_empty_operations(
     assert md.popone("missing", "default") == "default"
     assert md.popall("missing", []) == []
 
-    # Test clear on empty dict
     md.clear()
     assert len(md) == 0
 
@@ -982,21 +864,17 @@ def test_edge_cases_empty_operations(
 def test_edge_cases_single_item_operations(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test edge cases with single item operations."""
     md = cls([("single", "value")])
 
-    # Test that single item behaves correctly
     assert len(md) == 1
     assert md["single"] == "value"
     assert md.getone("single") == "value"
     assert md.getall("single") == ["value"]
 
-    # Test popping the only item
     result = md.popone("single")
     assert result == "value"
     assert len(md) == 0
 
-    # Test operations after becoming empty
     with pytest.raises(KeyError):
         _ = md["single"]
 
@@ -1005,28 +883,23 @@ def test_edge_cases_single_item_operations(
 def test_edge_cases_duplicate_handling(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
-    """Test edge cases with many duplicate keys."""
     md = cls()
 
-    # Add many values for same key
     for i in range(5):
         md.add("key", i)
 
     assert len(md) == 5
-    assert md["key"] == 0  # First value
+    assert md["key"] == 0
     assert md.getall("key") == [0, 1, 2, 3, 4]
 
-    # Test popone removes first
     result = md.popone("key")
     assert result == 0
     assert md.getall("key") == [1, 2, 3, 4]
 
-    # Test popall removes all remaining
     result2 = md.popall("key")
     assert result2 == [1, 2, 3, 4]
     assert len(md) == 0
 
-    # Test setitem replaces all
     md.add("key", 1)
     md.add("key", 2)
     md.add("key", 3)
@@ -1035,16 +908,12 @@ def test_edge_cases_duplicate_handling(
     assert md["key"] == 999
 
 
-@pytest.mark.parametrize(
-    "cls", [MultiDict, ListMultiDict]
-)  # multidict has type restrictions
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict])
 def test_edge_cases_mixed_types(
     cls: type[multidict.MultiDict | ListMultiDict],
 ) -> None:
-    """Test edge cases with mixed key and value types."""
     md: MutableMultiMapping[object, str] = cls()  # ty: ignore[invalid-assignment]
 
-    # Test various key types
     md.add("string", "value1")
     md.add(42, "value2")
     md.add(("tuple", "key"), "value3")
@@ -1056,7 +925,6 @@ def test_edge_cases_mixed_types(
     assert md[("tuple", "key")] == "value3"
     assert md[None] == "value4"
 
-    # Test various value types
     md2 = cls()
     md2.add("key", "string")
     md2.add("key", 42)
@@ -1068,72 +936,59 @@ def test_edge_cases_mixed_types(
 
 
 def test_edge_cases_multidict_specific() -> None:
-    """Test edge cases specific to our MultiDict implementation."""
     md = MultiDict([("a", 1), ("b", 2), ("a", 3)])
 
-    # Test internal consistency after operations
     assert len(md._items) == 3
     assert len(md._key_indices) == 2
     assert md._key_indices["a"] == [0, 2]
     assert md._key_indices["b"] == [1]
 
-    # Test that internal state is maintained after deletion
     del md["a"]
     assert len(md._items) == 1
     assert len(md._key_indices) == 1
     assert "a" not in md._key_indices
-    assert md._key_indices["b"] == [0]  # Index should be updated
+    assert md._key_indices["b"] == [0]
 
-    # Test that internal state is maintained after setitem with duplicates
     md.add("c", 1)
     md.add("c", 2)
     md.add("c", 3)
     md["c"] = 999
 
-    assert len(md._items) == 2  # b and c
-    assert md._key_indices["c"] == [1]  # Only one index for c
+    assert len(md._items) == 2
+    assert md._key_indices["c"] == [1]
 
 
 @pytest.mark.parametrize("cls", [MultiDict, multidict.MultiDict])
 def test_copy_method(cls: type[MultiDict | multidict.MultiDict]) -> None:
-    """Test copy() method."""
-    # Test copying empty MultiDict
     empty_md = cls()
     empty_copy = empty_md.copy()
     assert len(empty_copy) == 0
     assert list(empty_copy.items()) == []
-    assert empty_md is not empty_copy  # Different objects
+    assert empty_md is not empty_copy
 
-    # Test copying MultiDict with single item
     single_md = cls([("a", 1)])
     single_copy = single_md.copy()
     assert len(single_copy) == 1
     assert list(single_copy.items()) == [("a", 1)]
-    assert single_md is not single_copy  # Different objects
+    assert single_md is not single_copy
 
-    # Test copying MultiDict with multiple items including duplicates
     md = cls([("a", 1), ("b", 2), ("a", 3), ("c", 4)])
     copied = md.copy()
 
-    # Test that content is identical
     assert len(copied) == len(md)
     assert list(copied.items()) == list(md.items())
     assert list(copied.keys()) == list(md.keys())
     assert list(copied.values()) == list(md.values())
 
-    # Test that duplicate keys are preserved
     assert copied.getall("a") == md.getall("a") == [1, 3]
 
-    # Test that they are different objects
     assert md is not copied
 
-    # Test that changes to original don't affect copy
     md.add("d", 5)
     assert len(md) == 5
     assert len(copied) == 4
     assert "d" not in copied
 
-    # Test that changes to copy don't affect original
     copied.add("e", 6)
     assert len(copied) == 5
     assert len(md) == 5
@@ -1141,8 +996,6 @@ def test_copy_method(cls: type[MultiDict | multidict.MultiDict]) -> None:
 
 
 def test_exception_safety() -> None:
-    """Test for basic exception safety."""
-
     class BadKey:
         def __hash__(self) -> int:
             raise RuntimeError("I'm a bad key")
@@ -1154,93 +1007,74 @@ def test_exception_safety() -> None:
     assert list(md.items()) == [("good", "value")]
 
 
-# Additional tests for uncovered lines
 def test_empty_init_no_rebuild() -> None:
-    """Test that empty MultiDict initialization doesn't call _rebuild_indices."""
-    # This tests line 53-54: if self._items: and the else branch
     md = MultiDict()
     assert len(md._items) == 0
     assert len(md._key_indices) == 0
 
 
 def test_update_with_empty_input() -> None:
-    """Test update with empty input to cover early return."""
     md = MultiDict([("a", 1)])
     md.update()
     assert len(md) == 1
     assert md["a"] == 1
 
-    md.update([])  # Empty list
+    md.update([])
     assert len(md) == 1
     assert md["a"] == 1
 
 
 def test_merge_with_empty_input() -> None:
-    """Test merge with empty input to cover early return."""
-    # This tests line 253-254: if not new_items: return
     md = MultiDict([("a", 1)])
-    md.merge()  # Empty input
+    md.merge()
     assert len(md) == 1
     assert md["a"] == 1
 
-    md.merge([])  # Empty list
+    md.merge([])
     assert len(md) == 1
     assert md["a"] == 1
 
 
 def test_extend_with_empty_input() -> None:
-    """Test extend with empty input to cover early return."""
-    # This tests line 281-282: if not new_items: return
     md = MultiDict([("a", 1)])
-    md.extend()  # Empty input
+    md.extend()
     assert len(md) == 1
     assert md["a"] == 1
 
-    md.extend([])  # Empty list
+    md.extend([])
     assert len(md) == 1
     assert md["a"] == 1
 
 
 def test_merge_all_existing_keys() -> None:
-    """Test merge where all keys already exist."""
-    # This tests the case where new_items becomes empty after filtering
     md = MultiDict([("a", 1), ("b", 2)])
-    md.merge([("a", 999), ("b", 888)])  # All keys exist, should be filtered out
+    md.merge([("a", 999), ("b", 888)])
     assert len(md) == 2
-    assert md["a"] == 1  # Should remain unchanged
-    assert md["b"] == 2  # Should remain unchanged
+    assert md["a"] == 1
+    assert md["b"] == 2
 
 
 def test_merge_existing_key_in_indices() -> None:
-    """Test merge with key that already exists in indices."""
-    # This tests line 262-263: if key not in self._key_indices
     md = MultiDict([("a", 1)])
     existing_keys = set(md._key_indices.keys())
     assert "a" in existing_keys
 
-    # Since merge filters out existing keys, we test the else branch
-    # by adding a new key
     md.merge([("b", 2)])
     assert "b" in md._key_indices
     assert md["b"] == 2
 
 
 def test_extend_existing_key_in_indices() -> None:
-    """Test extend with key that already exists in indices."""
-    # This tests line 290-291: if key not in self._key_indices
     md = MultiDict([("a", 1)])
 
-    # Extend with existing key - should add to existing key's index list
     md.extend([("a", 2)])
     assert len(md._key_indices["a"]) == 2
     assert md._key_indices["a"] == [0, 1]
 
 
 def test_update_only_updates_no_additions() -> None:
-    """Test update with only existing keys (no new keys)."""
-    # This tests line 228-229: if additions: branch when additions is empty
     md = MultiDict([("a", 1), ("b", 2)])
-    md.update([("a", 999), ("b", 888)])  # Only existing keys
+    md.update([("a", 999), ("b", 888)])
 
     assert len(md) == 2
     assert md["a"] == 999
@@ -1248,27 +1082,22 @@ def test_update_only_updates_no_additions() -> None:
 
 
 def test_update_only_additions_no_updates() -> None:
-    """Test update with only new keys (no existing keys)."""
-    # This tests line 224-225: if updates_by_key: branch when updates_by_key is empty
     md = MultiDict([("a", 1)])
-    md.update([("b", 2), ("c", 3)])  # Only new keys
+    md.update([("b", 2), ("c", 3)])
 
     assert len(md) == 3
-    assert md["a"] == 1  # Original unchanged
+    assert md["a"] == 1
     assert md["b"] == 2
     assert md["c"] == 3
 
 
 def test_init_with_no_items_and_no_kwargs() -> None:
-    """Test initialization with completely empty input."""
-    # This tests the case where _items remains empty after all initialization
-    md = MultiDict(())  # Empty tuple
+    md = MultiDict(())
     assert len(md._items) == 0
     assert len(md._key_indices) == 0
 
 
 def test_update_keeps_indices_consistent() -> None:
-    """Test that update() leaves the key indices matching the items."""
     md = MultiDict([("a", 1), ("b", 2), ("a", 3), ("c", 4)])
     md.update([("a", 999), ("d", 5), ("a", 6), ("a", 7)])
 
@@ -1277,86 +1106,69 @@ def test_update_keeps_indices_consistent() -> None:
 
 
 def test_multidict_equality() -> None:
-    """Test MultiDict.__eq__ against different types."""
-    # Create test data
     md1 = MultiDict([("a", 1), ("b", 2), ("a", 3)])
-    md2 = MultiDict([("a", 1), ("b", 2), ("a", 3)])  # Same content
-    md3 = MultiDict([("a", 1), ("b", 2)])  # Different content
-    md4 = MultiDict([("b", 2), ("a", 1), ("a", 3)])  # Different order
+    md2 = MultiDict([("a", 1), ("b", 2), ("a", 3)])
+    md3 = MultiDict([("a", 1), ("b", 2)])
+    md4 = MultiDict([("b", 2), ("a", 1), ("a", 3)])
 
-    # Test MultiDict vs MultiDict
-    assert md1 == md2  # Same content
-    assert md1 != md3  # Different content
-    assert md1 != md4  # Different order
+    assert md1 == md2
+    assert md1 != md3
+    assert md1 != md4
 
-    # Test with empty MultiDicts
     empty1 = MultiDict()
     empty2 = MultiDict()
     assert empty1 == empty2
     assert md1 != empty1
 
-    # Test MultiDict vs multidict.MultiDict
     mdict1 = multidict.MultiDict([("a", 1), ("b", 2), ("a", 3)])
     mdict2 = multidict.MultiDict([("a", 1), ("b", 2)])
-    mdict3 = multidict.MultiDict([("b", 2), ("a", 1), ("a", 3)])  # Different order
+    mdict3 = multidict.MultiDict([("b", 2), ("a", 1), ("a", 3)])
 
-    assert md1 == mdict1  # Same content and order
-    assert md1 != mdict2  # Different content
-    assert md1 != mdict3  # Different order
+    assert md1 == mdict1
+    assert md1 != mdict2
+    assert md1 != mdict3
 
-    # Test MultiDict vs other MultiMapping (ListMultiDict)
     lmd1: ListMultiDict[str, int] = ListMultiDict([("a", 1), ("b", 2), ("a", 3)])
     lmd2: ListMultiDict[str, int] = ListMultiDict([("a", 1), ("b", 2)])
-    lmd3: ListMultiDict[str, int] = ListMultiDict(
-        [("b", 2), ("a", 1), ("a", 3)]  # Different order
-    )
+    lmd3: ListMultiDict[str, int] = ListMultiDict([("b", 2), ("a", 1), ("a", 3)])
 
-    assert md1 == lmd1  # Same content and order
-    assert md1 != lmd2  # Different content
-    assert md1 != lmd3  # Different order
+    assert md1 == lmd1
+    assert md1 != lmd2
+    assert md1 != lmd3
 
-    # Test MultiDict vs regular dict
-    # For dict comparison, ALL items in MultiDict must match the dict value for each key
-    md_no_dups = MultiDict([("a", 1), ("b", 2)])  # No duplicate keys
+    md_no_dups = MultiDict([("a", 1), ("b", 2)])
     dict1 = {"a": 1, "b": 2}
-    dict2 = {"a": 3, "b": 2}  # Different value for "a"
-    dict3 = {"a": 1, "b": 2, "c": 4}  # Extra key
-    dict4 = {"a": 1}  # Missing key
+    dict2 = {"a": 3, "b": 2}
+    dict3 = {"a": 1, "b": 2, "c": 4}
+    dict4 = {"a": 1}
 
-    assert md_no_dups == dict1  # Same content, no duplicates
-    assert md_no_dups != dict2  # Different value for "a"
-    assert md_no_dups != dict3  # Different length
-    assert md_no_dups != dict4  # Different length
+    assert md_no_dups == dict1
+    assert md_no_dups != dict2
+    assert md_no_dups != dict3
+    assert md_no_dups != dict4
 
-    # MultiDict with duplicates vs dict - fails because of length mismatch
-    assert md1 != dict1  # md1 has len=3, dict1 has len=2
+    assert md1 != dict1
 
-    # Test edge case: dict with key not in MultiDict
     md_partial = MultiDict([("a", 1)])
     dict_with_missing = {"b": 2}
-    assert md_partial != dict_with_missing  # KeyError case
+    assert md_partial != dict_with_missing
 
-    # Test MultiDict vs non-mapping types (should return NotImplemented from __eq__)
     assert md1.__eq__("string") is NotImplemented
     assert md1.__eq__(42) is NotImplemented
     assert md1.__eq__([1, 2, 3]) is NotImplemented
     assert md1.__eq__(None) is NotImplemented
 
-    # But == operator returns False after trying both directions
     assert (md1 == "string") is False
     assert (md1 == 42) is False
     assert (md1 == [1, 2, 3]) is False
     assert (md1 is None) is False
 
-    # Test empty dict vs empty MultiDict
     empty_dict = {}
     assert empty1 == empty_dict
 
-    # Test edge cases with special values
     md_special = MultiDict([("a", None), ("b", 0), ("c", "")])
     dict_special = {"a": None, "b": 0, "c": ""}
     assert md_special == dict_special
 
-    # Test case where MultiMapping comparison fails due to different lengths
     lmd_shorter: ListMultiDict[str, int] = ListMultiDict([("a", 1)])
-    assert md1 != lmd_shorter  # Different lengths
+    assert md1 != lmd_shorter
