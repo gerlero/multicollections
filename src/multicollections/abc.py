@@ -270,8 +270,8 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
                 ret.append(self.popone(key))
         return ret
 
-    @with_default
     @override
+    @with_default
     def pop(self, key: _K, /) -> _V:
         """Same as `popone`."""
         return self.popone(key)
