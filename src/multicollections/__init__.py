@@ -30,7 +30,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         /,
         **kwargs: _V,
     ) -> None:
-        """Create a MultiDict."""
+        """Create a MultiDict from another (multi-)mapping, an iterable of key-value pairs, or keyword arguments."""
         match iterable:
             case MappingLike():
                 self._items = list(iterable.items())
@@ -47,10 +47,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     @override
     @with_default
     def getall(self, key: _K, /) -> list[_V]:
-        """Get all values for a key.
-
-        Raises a `KeyError` if the key is not found and no default is provided.
-        """
         ret = [self._items[i][1] for i in self._key_indices.get(key, [])]
         if not ret:
             raise KeyError(key)
@@ -59,19 +55,10 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     @override
     @with_default
     def getone(self, key: _K, /) -> _V:
-        """Get the first value for a key.
-
-        Raises a `KeyError` if the key is not found and no default is provided.
-        """
         return self._items[self._key_indices[key][0]][1]
 
     @override
     def __contains__(self, key: object, /) -> bool:
-        """Check if a key exists in the multi-mapping.
-
-        This is optimized to directly check the key indices without
-        calling __getitem__, avoiding exception handling overhead.
-        """
         return key in self._key_indices
 
     @overload
@@ -82,7 +69,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     def get(self, key: object, default: _D | None = None, /) -> _V | _D | None:
-        """Get the first value for a key, or a default value if not found."""
         if (indices := self._key_indices.get(key)) is None:
             return default
         return self._items[indices[0]][1]
@@ -100,49 +86,35 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     def setdefault(self, key: _K, default: _D | None = None, /) -> _V | _D | None:
-        """Get the first value for a key, or set and return a default if not found."""
         if (indices := self._key_indices.get(key)) is not None:
-            # Key exists, return its first value
             return self._items[indices[0]][1]
-        # Key doesn't exist, add it with the default value
+
         self.add(key, default)  # ty: ignore[invalid-argument-type]
         return default
 
     @override
     def __setitem__(self, key: _K, value: _V, /) -> None:
-        """Set the value for a key.
-
-        Replaces the first value for a key if it exists; otherwise, it adds a new item.
-        Any other items with the same key are removed.
-        """
         if (indices := self._key_indices.get(key)) is not None:
-            # Key exists, replace first occurrence and remove others
             first_index = indices[0]
 
-            # Update the first occurrence
             self._items[first_index] = (key, value)
 
             if len(indices) > 1:
-                # Remove duplicates efficiently by marking items as None and filtering
                 for idx in indices[1:]:
                     self._items[idx] = None  # ty: ignore[invalid-assignment]
 
-                # Filter out None items and rebuild indices
                 self._items = [item for item in self._items if item is not None]
                 self._rebuild_indices()
         else:
-            # Key doesn't exist, add it
             self.add(key, value)
 
     def _rebuild_indices(self) -> None:
-        """Rebuild the key indices after items list has been modified."""
         self._key_indices = {}
         for i, (key, _) in enumerate(self._items):
             self._key_indices.setdefault(key, []).append(i)
 
     @override
     def add(self, key: _K, value: _V, /) -> None:
-        """Add a new value for a key."""
         index = len(self._items)
         self._key_indices.setdefault(key, []).append(index)
         self._items.append((key, value))
@@ -150,16 +122,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     @override
     @with_default
     def popone(self, key: _K, /) -> _V:
-        """Remove and return the first value for a key."""
         indices = self._key_indices[key]
 
         first_index = indices[0]
         value = self._items[first_index][1]
 
-        # Mark the first item for removal
         self._items[first_index] = None  # ty: ignore[invalid-assignment]
 
-        # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
         self._rebuild_indices()
 
@@ -168,16 +137,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
     @override
     @with_default
     def popall(self, key: _K, /) -> list[_V]:
-        """Remove and return all values for a key."""
         indices_to_remove = self._key_indices[key]
 
         ret = [self._items[i][1] for i in indices_to_remove]
 
-        # Mark items for removal
         for idx in indices_to_remove:
             self._items[idx] = None  # ty: ignore[invalid-assignment]
 
-        # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
         self._rebuild_indices()
 
@@ -185,10 +151,6 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     def popitem(self) -> tuple[_K, _V]:
-        """Remove and return the last (key, value) pair.
-
-        Raises a `KeyError` if the MultiDict is empty.
-        """
         if not self._items:
             msg = "popitem(): multi-mapping is empty"
             raise KeyError(msg)
@@ -203,36 +165,24 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     def __delitem__(self, key: _K, /) -> None:
-        """Remove all values for a key.
-
-        Raises a `KeyError` if the key is not found.
-        """
         indices_to_remove = self._key_indices[key]
 
-        # Mark items for removal
         for idx in indices_to_remove:
             self._items[idx] = None  # ty: ignore[invalid-assignment]
 
-        # Filter out None items and rebuild indices
         self._items = [item for item in self._items if item is not None]
         self._rebuild_indices()
 
     @override
     def __iter__(self) -> Iterator[_K]:
-        """Return an iterator over the keys, in insertion order.
-
-        Keys with multiple values will be yielded multiple times.
-        """
         return (k for k, _ in self._items)
 
     @override
     def __len__(self) -> int:
-        """Return the total number of items."""
         return len(self._items)
 
     @override
     def clear(self) -> None:
-        """Remove all items from the multi-mapping."""
         self._items.clear()
         self._key_indices.clear()
 
@@ -277,5 +227,4 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     def __repr__(self) -> str:
-        """Return a string representation of the MultiDict."""
         return f"{self.__class__.__name__}({list(self._items)!r})"
