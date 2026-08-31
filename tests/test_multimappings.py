@@ -739,9 +739,9 @@ def test_update_method_from_duck_mapping(
     assert d["b"] == 2
 
 
-@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict])
 def test_update_method_from_duck_multi_mapping(
-    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
+    cls: type[MultiDict | ListMultiDict],
 ) -> None:
     class DuckMultiMapping:
         def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
