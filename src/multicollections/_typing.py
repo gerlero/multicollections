@@ -19,19 +19,59 @@ if TYPE_CHECKING:
     from collections.abc import Callable, Iterable
 
 
-_Self = TypeVar("_Self")
+_Self_contra = TypeVar("_Self_contra", contravariant=True)
 _K = TypeVar("_K")
 _K_contra = TypeVar("_K_contra", contravariant=True)
 _V_co = TypeVar("_V_co", covariant=True)
 _D = TypeVar("_D")
 
 
-class MethodWithDefault(Protocol[_K_contra, _V_co]):
+class _BoundMethodWithDefault(Protocol[_K_contra, _V_co]):
     @overload
-    def __call__(self: _Self, key: _K_contra, /) -> _V_co: ...
+    def __call__(self, key: _K_contra, /) -> _V_co: ...
 
     @overload
-    def __call__(self: _Self, key: _K_contra, /, default: _D) -> _V_co | _D: ...
+    def __call__(
+        self,
+        key: _K_contra,
+        /,
+        default: _D,
+    ) -> _V_co | _D: ...
+
+
+class MethodWithDefault(Protocol[_Self_contra, _K_contra, _V_co]):
+    @overload
+    def __call__(
+        self,
+        obj: _Self_contra,
+        key: _K_contra,
+        /,
+    ) -> _V_co: ...
+
+    @overload
+    def __call__(
+        self,
+        obj: _Self_contra,
+        key: _K_contra,
+        /,
+        default: _D,
+    ) -> _V_co | _D: ...
+
+    @overload
+    def __get__(
+        self,
+        obj: None,
+        objtype: type | None = None,
+        /,
+    ) -> MethodWithDefault[_Self_contra, _K_contra, _V_co]: ...
+
+    @overload
+    def __get__(
+        self,
+        obj: _Self_contra,
+        objtype: type | None = None,
+        /,
+    ) -> _BoundMethodWithDefault[_K_contra, _V_co]: ...
 
 
 class SupportsGetItem(Protocol[_K_contra, _V_co]):
@@ -47,6 +87,3 @@ class SupportsKeysAndGetItem(Protocol[_K, _V_co]):
 @runtime_checkable
 class MappingLike(SupportsKeysAndGetItem[_K, _V_co], Protocol):
     def items(self) -> Iterable[tuple[_K, _V_co]]: ...
-
-
-__all__ = ["MappingLike", "MethodWithDefault", "SupportsKeysAndGetItem", "override"]
