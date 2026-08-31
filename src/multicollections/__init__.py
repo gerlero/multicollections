@@ -115,7 +115,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return default
 
     @override
-    def __setitem__(self, key: _K, value: _V) -> None:
+    def __setitem__(self, key: _K, value: _V, /) -> None:
         if (indices := self._key_indices.get(key)) is not None:
             first_index = indices[0]
 
@@ -186,7 +186,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return key, value
 
     @override
-    def __delitem__(self, key: _K) -> None:
+    def __delitem__(self, key: _K, /) -> None:
         indices_to_remove = self._key_indices[key]
 
         for idx in indices_to_remove:
@@ -216,7 +216,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return new_md
 
     @override
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object, /) -> bool:
         """Check equality with another MultiDict or mapping-like object.
 
         Two `MultiDict` instances (or a `MultiDict` and any `MultiMapping`) are

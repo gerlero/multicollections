@@ -60,7 +60,7 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
         return ret
 
     @override
-    def __setitem__(self, key: _K, value: _V) -> None:
+    def __setitem__(self, key: _K, value: _V, /) -> None:
         replaced: int | None = None
         for i, (k, _) in enumerate(self._items):
             if k == key:

@@ -88,7 +88,7 @@ def test_creation_from_duck_mapping(
         def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
             self._dict = dict(items)
 
-        def __getitem__(self, key: str) -> int:
+        def __getitem__(self, key: str, /) -> int:
             return self._dict[key]
 
         def keys(self) -> Iterable[str]:
@@ -117,7 +117,7 @@ def test_creation_from_duck_multi_mapping(
         def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
             self._items = list(items)
 
-        def __getitem__(self, key: str) -> int:
+        def __getitem__(self, key: str, /) -> int:
             assert False
 
         def keys(self) -> Iterable[str]:
@@ -719,7 +719,7 @@ def test_update_method_from_duck_mapping(
         def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
             self._dict = dict(items)
 
-        def __getitem__(self, key: str) -> int:
+        def __getitem__(self, key: str, /) -> int:
             return self._dict[key]
 
         def keys(self) -> Iterable[str]:
@@ -747,7 +747,7 @@ def test_update_method_from_duck_multi_mapping(
         def __init__(self, items: Iterable[tuple[str, int]], /) -> None:
             self._items = list(items)
 
-        def __getitem__(self, key: str) -> int:
+        def __getitem__(self, key: str, /) -> int:
             assert False
 
         def keys(self) -> Iterable[str]:

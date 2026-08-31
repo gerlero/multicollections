@@ -52,7 +52,7 @@ class KeysView(MappingKeysView[_K_co], MultiMappingView):
     """View for the keys in a MultiMapping."""
 
     @override
-    def __contains__(self, key: object) -> bool:
+    def __contains__(self, key: object, /) -> bool:
         """Check if the key is in the multi-mapping."""
         return key in self._mapping
 
@@ -66,7 +66,7 @@ class ItemsView(MappingItemsView[_K_co, _V_co], MultiMappingView):
     """View for the items (key-value pairs) in a MultiMapping."""
 
     @override
-    def __contains__(self, item: object) -> bool:
+    def __contains__(self, item: object, /) -> bool:
         """Check if the item is in the multi-mapping."""
         match item:
             case tuple((key, value)):
@@ -96,7 +96,7 @@ class ValuesView(MappingValuesView[_V_co], MultiMappingView):
     """View for the values in a MultiMapping."""
 
     @override
-    def __contains__(self, value: object) -> bool:
+    def __contains__(self, value: object, /) -> bool:
         """Check if the value is in the mapping."""
         return any(v == value for v in self)
 
@@ -203,7 +203,7 @@ class MultiMapping(Mapping[_K, _V_co]):
             raise RuntimeError(msg) from e
 
     @override
-    def __getitem__(self, key: _K) -> _V_co:
+    def __getitem__(self, key: _K, /) -> _V_co:
         """Get the first value for a key.
 
         Raises a `KeyError` if the key is not found.
@@ -234,7 +234,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
 
     @abstractmethod
     @override
-    def __setitem__(self, key: _K, value: _V) -> None:
+    def __setitem__(self, key: _K, value: _V, /) -> None:
         """Set the value for a key.
 
         If the key does not exist, it is added with the specified value.
@@ -299,7 +299,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
         return key, value
 
     @override
-    def __delitem__(self, key: _K) -> None:
+    def __delitem__(self, key: _K, /) -> None:
         """Remove all values for a key.
 
         Raises a `KeyError` if the key is not found.
