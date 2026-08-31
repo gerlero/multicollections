@@ -880,9 +880,9 @@ def test_edge_cases_duplicate_handling(
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict])
 def test_edge_cases_mixed_types(
-    cls: type[multidict.MultiDict | ListMultiDict],
+    cls: type[MultiDict | ListMultiDict],
 ) -> None:
-    md: MutableMultiMapping[object, str] = cls()  # ty: ignore[invalid-assignment]
+    md: MutableMultiMapping[object, str] = cls()
 
     md.add("string", "value1")
     md.add(42, "value2")
