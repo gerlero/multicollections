@@ -561,7 +561,7 @@ def test_clear_method(
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
 def test_extend_method(
-    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
     md = cls([("a", 1)])
 
@@ -1043,9 +1043,9 @@ def test_multidict_equality() -> None:
     assert md1 != mdict2
     assert md1 != mdict3
 
-    lmd1: ListMultiDict[str, int] = ListMultiDict([("a", 1), ("b", 2), ("a", 3)])
-    lmd2: ListMultiDict[str, int] = ListMultiDict([("a", 1), ("b", 2)])
-    lmd3: ListMultiDict[str, int] = ListMultiDict([("b", 2), ("a", 1), ("a", 3)])
+    lmd1 = ListMultiDict([("a", 1), ("b", 2), ("a", 3)])
+    lmd2 = ListMultiDict([("a", 1), ("b", 2)])
+    lmd3 = ListMultiDict([("b", 2), ("a", 1), ("a", 3)])
 
     assert md1 == lmd1
     assert md1 != lmd2
@@ -1085,5 +1085,5 @@ def test_multidict_equality() -> None:
     dict_special = {"a": None, "b": 0, "c": ""}
     assert md_special == dict_special
 
-    lmd_shorter: ListMultiDict[str, int] = ListMultiDict([("a", 1)])
+    lmd_shorter = ListMultiDict([("a", 1)])
     assert md1 != lmd_shorter
