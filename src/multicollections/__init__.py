@@ -97,7 +97,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @overload
     def setdefault(
-        self: MultiDict[_K, _T | None],
+        self: SupportsGetItem[_K, _T | None],
         key: _K,
         default: None = None,
         /,
