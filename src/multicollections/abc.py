@@ -42,12 +42,6 @@ _Self_contra = TypeVar("_Self_contra", contravariant=True)
 class MultiMappingView(MappingView):
     """Base class for MultiMapping views."""
 
-    _mapping: MultiMapping
-
-    def __init__(self, mapping: MultiMapping, /) -> None:
-        """Initialize the view with the given mapping."""
-        super().__init__(mapping)
-
     @override
     def __len__(self) -> int:
         """Return the number of items in the view."""
@@ -319,9 +313,7 @@ class MutableMultiMapping(MultiMapping[_K, _V], MutableMapping[_K, _V]):
             self.popall(key)
 
     @overload
-    def extend(
-        self, other: SupportsKeysAndGetItem[_K, _V] = ..., /, **kwargs: _V
-    ) -> None: ...
+    def extend(self, other: SupportsKeysAndGetItem[_K, _V] = ..., /) -> None: ...
 
     @overload
     def extend(

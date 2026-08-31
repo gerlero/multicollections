@@ -1,9 +1,14 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Mapping
-from typing import TypeVar
+from typing import TypeVar, overload
 
-from multicollections._typing import MappingLike, SupportsKeysAndGetItem, override
+from multicollections._typing import (
+    MappingLike,
+    SupportsGetItem,
+    SupportsKeysAndGetItem,
+    override,
+)
 from multicollections.abc import MutableMultiMapping, with_default
 
 _K = TypeVar("_K")
@@ -11,6 +16,28 @@ _V = TypeVar("_V")
 
 
 class ListMultiDict(MutableMultiMapping[_K, _V]):
+    @overload
+    def __init__(self, iterable: SupportsKeysAndGetItem[_K, _V] = ..., /) -> None: ...
+
+    @overload
+    def __init__(
+        self: SupportsGetItem[str, _V],
+        iterable: SupportsKeysAndGetItem[str, _V] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
+
+    @overload
+    def __init__(self, iterable: Iterable[tuple[_K, _V]] = ..., /) -> None: ...
+
+    @overload
+    def __init__(
+        self: SupportsGetItem[str, _V],
+        iterable: Iterable[tuple[str, _V]] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
+
     def __init__(
         self, iterable: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (), /, **kwargs: _V
     ) -> None:

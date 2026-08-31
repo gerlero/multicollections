@@ -6,7 +6,7 @@ import importlib.metadata
 from collections.abc import Iterable, Iterator, Mapping
 from typing import TypeVar, overload
 
-from ._typing import MappingLike, SupportsKeysAndGetItem, override
+from ._typing import MappingLike, SupportsGetItem, SupportsKeysAndGetItem, override
 from .abc import MultiMapping, MutableMultiMapping, with_default
 
 __version__ = importlib.metadata.version("multicollections")
@@ -23,6 +23,28 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     Preserves insertion order.
     """
+
+    @overload
+    def __init__(self, iterable: SupportsKeysAndGetItem[_K, _V] = ..., /) -> None: ...
+
+    @overload
+    def __init__(
+        self: SupportsGetItem[str, _V],
+        iterable: SupportsKeysAndGetItem[str, _V] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
+
+    @overload
+    def __init__(self, iterable: Iterable[tuple[_K, _V]] = ..., /) -> None: ...
+
+    @overload
+    def __init__(
+        self: SupportsGetItem[str, _V],
+        iterable: Iterable[tuple[str, _V]] = ...,
+        /,
+        **kwargs: _V,
+    ) -> None: ...
 
     def __init__(
         self,
