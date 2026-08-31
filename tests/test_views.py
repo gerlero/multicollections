@@ -10,7 +10,7 @@ from .minimalimpl import ListMultiDict
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
 def test_keys_view(
-    cls: type[MultiDict[str, int] | ListMultiDict[str, int] | multidict.MultiDict[int]],
+    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     keys = md.keys()
