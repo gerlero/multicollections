@@ -32,10 +32,11 @@ from ._typing import (
 
 _K = TypeVar("_K")
 _K_co = TypeVar("_K_co", covariant=True)
+_K_contra = TypeVar("_K_contra", contravariant=True)
 _V = TypeVar("_V")
 _V_co = TypeVar("_V_co", covariant=True)
 _D = TypeVar("_D")
-_Self = TypeVar("_Self")
+_Self_contra = TypeVar("_Self_contra", contravariant=True)
 
 
 class MultiMappingView(MappingView):
@@ -122,24 +123,24 @@ else:
 
 
 def with_default(
-    meth: Callable[[_Self, _K], _V],
+    meth: Callable[[_Self_contra, _K_contra], _V_co],
     /,
-) -> MethodWithDefault[_K, _V]:
+) -> MethodWithDefault[_Self_contra, _K_contra, _V_co]:
     """Add a default value argument to a method that can raise a `KeyError`."""
 
     @overload
-    def wrapper(self: _Self, key: _K, /) -> _V: ...
+    def wrapper(self: _Self_contra, key: _K_contra, /) -> _V_co: ...
 
     @overload
-    def wrapper(self: _Self, key: _K, /, default: _D) -> _V | _D: ...
+    def wrapper(self: _Self_contra, key: _K_contra, /, default: _D) -> _V_co | _D: ...
 
     @functools.wraps(meth)
     def wrapper(
-        self: _Self,
-        key: _K,
+        self: _Self_contra,
+        key: _K_contra,
         /,
         default: _D | _NO_DEFAULT = _NO_DEFAULT,  # ty: ignore[invalid-type-form]
-    ) -> _V | _D:
+    ) -> _V_co | _D:
         try:
             return meth(self, key)
         except KeyError:
@@ -147,7 +148,7 @@ def with_default(
                 raise
             return default
 
-    return wrapper  # ty: ignore[invalid-return-type]
+    return wrapper
 
 
 def _yield_items(
