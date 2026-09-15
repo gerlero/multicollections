@@ -1,56 +1,48 @@
 """Fully generic `MultiDict` class."""
 
-from __future__ import annotations
-
 import importlib.metadata
 from collections.abc import Iterable, Iterator, Mapping
-from typing import TypeVar, overload
+from typing import overload, override
 
-from ._typing import MappingLike, SupportsGetItem, SupportsKeysAndGetItem, override
+from ._typing import MappingLike, SupportsGetItem, SupportsKeysAndGetItem
 from .abc import MultiMapping, MutableMultiMapping, with_default
 
 __version__ = importlib.metadata.version("multicollections")
 
 
-_K = TypeVar("_K")
-_V = TypeVar("_V")
-_D = TypeVar("_D")
-_T = TypeVar("_T")
-
-
-class MultiDict(MutableMultiMapping[_K, _V]):
+class MultiDict[K, V](MutableMultiMapping[K, V]):
     """A fully generic dictionary that allows multiple values with the same key.
 
     Preserves insertion order.
     """
 
     @overload
-    def __init__(self, iterable: SupportsKeysAndGetItem[_K, _V] = ..., /) -> None: ...
+    def __init__(self, iterable: SupportsKeysAndGetItem[K, V] = ..., /) -> None: ...
 
     @overload
     def __init__(
-        self: SupportsGetItem[str, _V],
-        iterable: SupportsKeysAndGetItem[str, _V] = ...,
+        self: SupportsGetItem[str, V],
+        iterable: SupportsKeysAndGetItem[str, V] = ...,
         /,
-        **kwargs: _V,
+        **kwargs: V,
     ) -> None: ...
 
     @overload
-    def __init__(self, iterable: Iterable[tuple[_K, _V]] = ..., /) -> None: ...
+    def __init__(self, iterable: Iterable[tuple[K, V]] = ..., /) -> None: ...
 
     @overload
     def __init__(
-        self: SupportsGetItem[str, _V],
-        iterable: Iterable[tuple[str, _V]] = ...,
+        self: SupportsGetItem[str, V],
+        iterable: Iterable[tuple[str, V]] = ...,
         /,
-        **kwargs: _V,
+        **kwargs: V,
     ) -> None: ...
 
     def __init__(
         self,
-        iterable: SupportsKeysAndGetItem[_K, _V] | Iterable[tuple[_K, _V]] = (),
+        iterable: SupportsKeysAndGetItem[K, V] | Iterable[tuple[K, V]] = (),
         /,
-        **kwargs: _V,
+        **kwargs: V,
     ) -> None:
         """Create a MultiDict from another (multi-)mapping, an iterable of key-value pairs, or keyword arguments."""
         match iterable:
@@ -62,13 +54,13 @@ class MultiDict(MutableMultiMapping[_K, _V]):
                 self._items = list(iterable)
         self._items.extend(kwargs.items())
 
-        self._key_indices: dict[_K, list[int]] = {}
+        self._key_indices: dict[K, list[int]] = {}
         if self._items:
             self._rebuild_indices()
 
     @override
     @with_default
-    def getall(self, key: _K, /) -> list[_V]:
+    def getall(self, key: K, /) -> list[V]:
         ret = [self._items[i][1] for i in self._key_indices.get(key, [])]
         if not ret:
             raise KeyError(key)
@@ -76,7 +68,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     @with_default
-    def getone(self, key: _K, /) -> _V:
+    def getone(self, key: K, /) -> V:
         return self._items[self._key_indices[key][0]][1]
 
     @override
@@ -84,30 +76,30 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return key in self._key_indices
 
     @overload
-    def get(self, key: object, /) -> _V | None: ...
+    def get(self, key: object, /) -> V | None: ...
 
     @overload
-    def get(self, key: object, default: _D, /) -> _V | _D: ...
+    def get[D](self, key: object, default: D, /) -> V | D: ...
 
     @override
-    def get(self, key: object, default: _D | None = None, /) -> _V | _D | None:
+    def get[D](self, key: object, default: D | None = None, /) -> V | D | None:
         if (indices := self._key_indices.get(key)) is None:
             return default
         return self._items[indices[0]][1]
 
     @overload
-    def setdefault(
-        self: SupportsGetItem[_K, _T | None],
-        key: _K,
+    def setdefault[T](
+        self: SupportsGetItem[K, T | None],
+        key: K,
         default: None = None,
         /,
-    ) -> _T | None: ...
+    ) -> T | None: ...
 
     @overload
-    def setdefault(self, key: _K, default: _V, /) -> _V: ...
+    def setdefault(self, key: K, default: V, /) -> V: ...
 
     @override
-    def setdefault(self, key: _K, default: _D | None = None, /) -> _V | _D | None:
+    def setdefault[D](self, key: K, default: D | None = None, /) -> V | D | None:
         if (indices := self._key_indices.get(key)) is not None:
             return self._items[indices[0]][1]
 
@@ -115,7 +107,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return default
 
     @override
-    def __setitem__(self, key: _K, value: _V, /) -> None:
+    def __setitem__(self, key: K, value: V, /) -> None:
         if (indices := self._key_indices.get(key)) is not None:
             first_index = indices[0]
 
@@ -136,14 +128,14 @@ class MultiDict(MutableMultiMapping[_K, _V]):
             self._key_indices.setdefault(key, []).append(i)
 
     @override
-    def add(self, key: _K, value: _V, /) -> None:
+    def add(self, key: K, value: V, /) -> None:
         index = len(self._items)
         self._key_indices.setdefault(key, []).append(index)
         self._items.append((key, value))
 
     @override
     @with_default
-    def popone(self, key: _K, /) -> _V:
+    def popone(self, key: K, /) -> V:
         indices = self._key_indices[key]
 
         first_index = indices[0]
@@ -158,7 +150,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     @with_default
-    def popall(self, key: _K, /) -> list[_V]:
+    def popall(self, key: K, /) -> list[V]:
         indices_to_remove = self._key_indices[key]
 
         ret = [self._items[i][1] for i in indices_to_remove]
@@ -172,7 +164,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return ret
 
     @override
-    def popitem(self) -> tuple[_K, _V]:
+    def popitem(self) -> tuple[K, V]:
         if not self._items:
             msg = "popitem(): multi-mapping is empty"
             raise KeyError(msg)
@@ -186,7 +178,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         return key, value
 
     @override
-    def __delitem__(self, key: _K, /) -> None:
+    def __delitem__(self, key: K, /) -> None:
         indices_to_remove = self._key_indices[key]
 
         for idx in indices_to_remove:
@@ -196,7 +188,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         self._rebuild_indices()
 
     @override
-    def __iter__(self) -> Iterator[_K]:
+    def __iter__(self) -> Iterator[K]:
         return (k for k, _ in self._items)
 
     @override
@@ -208,7 +200,7 @@ class MultiDict(MutableMultiMapping[_K, _V]):
         self._items.clear()
         self._key_indices.clear()
 
-    def copy(self) -> MultiDict[_K, _V]:
+    def copy(self) -> "MultiDict[K, V]":
         """Return a shallow copy of the MultiDict."""
         new_md = MultiDict.__new__(MultiDict)
         new_md._items = self._items.copy()
