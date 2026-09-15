@@ -1,45 +1,39 @@
-from __future__ import annotations
-
 from collections.abc import Iterable, Iterator, Mapping
-from typing import TypeVar, overload
+from typing import overload, override
 
 from multicollections._typing import (
     MappingLike,
     SupportsGetItem,
     SupportsKeysAndGetItem,
-    override,
 )
 from multicollections.abc import MutableMultiMapping, with_default
 
-_K = TypeVar("_K")
-_V = TypeVar("_V")
 
-
-class ListMultiDict(MutableMultiMapping[_K, _V]):
+class ListMultiDict[K, V](MutableMultiMapping[K, V]):
     @overload
-    def __init__(self, iterable: SupportsKeysAndGetItem[_K, _V] = ..., /) -> None: ...
+    def __init__(self, iterable: SupportsKeysAndGetItem[K, V] = ..., /) -> None: ...
 
     @overload
     def __init__(
-        self: SupportsGetItem[str, _V],
-        iterable: SupportsKeysAndGetItem[str, _V] = ...,
+        self: SupportsGetItem[str, V],
+        iterable: SupportsKeysAndGetItem[str, V] = ...,
         /,
-        **kwargs: _V,
+        **kwargs: V,
     ) -> None: ...
 
     @overload
-    def __init__(self, iterable: Iterable[tuple[_K, _V]] = ..., /) -> None: ...
+    def __init__(self, iterable: Iterable[tuple[K, V]] = ..., /) -> None: ...
 
     @overload
     def __init__(
-        self: SupportsGetItem[str, _V],
-        iterable: Iterable[tuple[str, _V]] = ...,
+        self: SupportsGetItem[str, V],
+        iterable: Iterable[tuple[str, V]] = ...,
         /,
-        **kwargs: _V,
+        **kwargs: V,
     ) -> None: ...
 
     def __init__(
-        self, iterable: Mapping[_K, _V] | Iterable[tuple[_K, _V]] = (), /, **kwargs: _V
+        self, iterable: Mapping[K, V] | Iterable[tuple[K, V]] = (), /, **kwargs: V
     ) -> None:
         match iterable:
             case MappingLike():
@@ -53,14 +47,14 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
 
     @override
     @with_default
-    def getall(self, key: _K, /) -> list[_V]:
+    def getall(self, key: K, /) -> list[V]:
         ret = [v for k, v in self._items if k == key]
         if not ret:
             raise KeyError(key)
         return ret
 
     @override
-    def __setitem__(self, key: _K, value: _V, /) -> None:
+    def __setitem__(self, key: K, value: V, /) -> None:
         replaced: int | None = None
         for i, (k, _) in enumerate(self._items):
             if k == key:
@@ -78,12 +72,12 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
             self._items.append((key, value))
 
     @override
-    def add(self, key: _K, value: _V, /) -> None:
+    def add(self, key: K, value: V, /) -> None:
         self._items.append((key, value))
 
     @override
     @with_default
-    def popone(self, key: _K, /) -> _V:
+    def popone(self, key: K, /) -> V:
         for i, (k, v) in enumerate(self._items):
             if k == key:
                 del self._items[i]
@@ -91,7 +85,7 @@ class ListMultiDict(MutableMultiMapping[_K, _V]):
         raise KeyError(key)
 
     @override
-    def __iter__(self) -> Iterator[_K]:
+    def __iter__(self) -> Iterator[K]:
         return (k for k, _ in self._items)
 
     @override
