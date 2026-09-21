@@ -214,6 +214,17 @@ class MultiMapping[K, V](Mapping[K, V]):
         """Return a view of the values in the MultiMapping."""
         return ValuesView(self)
 
+    def to_dict(self) -> dict[K, Collection[V]]:
+        """Convert the MultiMapping to a dictionary.
+
+        Each key will map to a collection of its values.
+        """
+        ret: dict[K, Collection[V]] = {}
+        for key in self:
+            if key not in ret:
+                ret[key] = self.getall(key)
+        return ret
+
 
 class MutableMultiMapping[K, V](MultiMapping[K, V], MutableMapping[K, V]):
     """Abstract base class for mutable multi-mapping collections.
