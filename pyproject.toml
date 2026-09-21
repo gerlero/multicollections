@@ -34,7 +34,7 @@ Documentation = "https://multicollections.readthedocs.io"
 lint = ["ruff"]
 typing = ["ty"]
 test = [
-    "multidict>=6.4.4,<7",
+    "multidict>=6.9,<7",
     "pytest>=9,<10",
     "pytest-cov"
 ]

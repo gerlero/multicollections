@@ -1140,3 +1140,19 @@ def test_multidict_equality() -> None:
 
     lmd_shorter = ListMultiDict([("a", 1)])
     assert md1 != lmd_shorter
+
+
+@pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])
+def test_to_dict_method(
+    cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
+) -> None:
+    md = cls([("a", 1), ("b", 2), ("a", 3)])
+
+    dict_representation = md.to_dict()
+    assert isinstance(dict_representation, dict)
+    assert dict_representation == {"a": [1, 3], "b": [2]}
+
+    md_empty = cls()
+    dict_empty = md_empty.to_dict()
+    assert isinstance(dict_empty, dict)
+    assert dict_empty == {}
