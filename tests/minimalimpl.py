@@ -14,22 +14,22 @@ class ListMultiDict[K, V](MutableMultiMapping[K, V]):
     def __init__(self, iterable: SupportsKeysAndGetItem[K, V] = ..., /) -> None: ...
 
     @overload
-    def __init__(
-        self: SupportsGetItem[str, V],
-        iterable: SupportsKeysAndGetItem[str, V] = ...,
+    def __init__[V2](
+        self: SupportsGetItem[str, V2],
+        iterable: SupportsKeysAndGetItem[str, V2] = ...,
         /,
-        **kwargs: V,
+        **kwargs: V2,
     ) -> None: ...
 
     @overload
     def __init__(self, iterable: Iterable[tuple[K, V]] = ..., /) -> None: ...
 
     @overload
-    def __init__(
-        self: SupportsGetItem[str, V],
-        iterable: Iterable[tuple[str, V]] = ...,
+    def __init__[V2](
+        self: SupportsGetItem[str, V2],
+        iterable: Iterable[tuple[str, V2]] = ...,
         /,
-        **kwargs: V,
+        **kwargs: V2,
     ) -> None: ...
 
     def __init__(
