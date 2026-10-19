@@ -188,12 +188,16 @@ class MultiDict[K, V](MutableMultiMapping[K, V]):
         self._rebuild_indices()
 
     @override
-    def __iter__(self) -> Iterator[K]:
-        return (k for k, _ in self._items)
+    def _iteritems(self) -> Iterator[tuple[K, V]]:
+        return iter(self._items)
 
     @override
     def __len__(self) -> int:
         return len(self._items)
+
+    @override
+    def __iter__(self) -> Iterator[K]:
+        return (self._items[indices[0]][0] for indices in self._key_indices.values())
 
     @override
     def clear(self) -> None:

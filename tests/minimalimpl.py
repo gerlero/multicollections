@@ -85,8 +85,8 @@ class ListMultiDict[K, V](MutableMultiMapping[K, V]):
         raise KeyError(key)
 
     @override
-    def __iter__(self) -> Iterator[K]:
-        return (k for k, _ in self._items)
+    def _iteritems(self) -> Iterator[tuple[K, V]]:
+        return iter(self._items)
 
     @override
     def __len__(self) -> int:

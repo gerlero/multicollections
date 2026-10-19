@@ -51,7 +51,11 @@ def test_creation_from_pairs(
     assert md["a"] == 1
     assert md["b"] == 2
     assert list(md.items()) == pairs
-    assert list(md) == ["a", "b", "a"]
+    assert len(md) == 3
+    assert list(md) == ["a", "b"]
+    assert len(md.keys()) == 2
+    assert list(md.keys()) == ["a", "b"]
+    assert len(md.values()) == 3
     assert list(md.values()) == [1, 2, 3]
 
 
@@ -240,15 +244,7 @@ def test_iteration(
     cls: type[MultiDict | ListMultiDict | multidict.MultiDict],
 ) -> None:
     md = cls([("a", 1), ("b", 2), ("a", 3)])
-    keys = list(md)
-
-    assert keys == ["a", "b", "a"]
-
-    key_count: dict[str, int] = {}
-    for key in md:
-        key_count[key] = key_count.get(key, 0) + 1
-
-    assert key_count == {"a": 2, "b": 1}
+    assert list(md) == ["a", "b"]
 
 
 @pytest.mark.parametrize("cls", [MultiDict, ListMultiDict, multidict.MultiDict])

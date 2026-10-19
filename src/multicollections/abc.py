@@ -2,10 +2,9 @@
 
 import contextlib
 import functools
-import itertools
 import sys
 from abc import abstractmethod
-from collections import defaultdict, deque
+from collections import deque
 from collections.abc import (
     Callable,
     Collection,
@@ -46,6 +45,11 @@ class KeysView[K](MappingKeysView[K], MultiMappingView):
         return key in self._mapping
 
     @override
+    def __len__(self) -> int:
+        """Return the number of unique keys in the multi-mapping."""
+        return len(set(self._mapping))
+
+    @override
     def __iter__(self) -> Iterator[K]:
         """Return an iterator over the keys."""
         return iter(self._mapping)
@@ -70,15 +74,7 @@ class ItemsView[K, V](MappingItemsView[K, V], MultiMappingView):
     @override
     def __iter__(self) -> Iterator[tuple[K, V]]:
         """Return an iterator over the items (key-value pairs)."""
-        counts: defaultdict[K, int] = defaultdict(int)
-        for k in self._mapping:
-            yield (
-                k,
-                next(
-                    itertools.islice(self._mapping.getall(k), counts[k], counts[k] + 1)
-                ),
-            )
-            counts[k] += 1
+        return self._mapping._iteritems()
 
 
 class ValuesView[V](MappingValuesView[V], MultiMappingView):
@@ -165,12 +161,8 @@ class MultiMapping[K, V](Mapping[K, V]):
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
-    @override
-    def __iter__(self) -> Iterator[K]:
-        """Return an iterator over the keys.
-
-        Keys with multiple values will be yielded multiple times.
-        """
+    def _iteritems(self) -> Iterator[tuple[K, V]]:
+        """Return an iterator over the items (key-value pairs)."""
         raise NotImplementedError  # pragma: no cover
 
     @abstractmethod
@@ -178,6 +170,19 @@ class MultiMapping[K, V](Mapping[K, V]):
     def __len__(self) -> int:
         """Return the total number of items (key-value pairs)."""
         raise NotImplementedError  # pragma: no cover
+
+    @override
+    def __iter__(self) -> Iterator[K]:
+        """Return an iterator over the keys.
+
+        Keys with multiple values will be yielded just once, on the first
+        occurrence of each key.
+        """
+        seen = set()
+        for key, _ in self.items():  # noqa: PERF102
+            if key not in seen:
+                seen.add(key)
+                yield key
 
     @with_default
     def getone(self, key: K, /) -> V:
@@ -282,19 +287,18 @@ class MutableMultiMapping[K, V](MultiMapping[K, V], MutableMapping[K, V]):
 
         Raises a `KeyError` if the multi-mapping is empty.
         """
-        if not self:
-            msg = "popitem(): multi-mapping is empty"
-            raise KeyError(msg)
-
-        for key in self:
-            pass
-        if len(self.getall(key)) == 1:
-            return key, self.popone(key)
-
         items = list(self.items())
-        value = items.pop()[1]
-        self.clear()
-        self.extend(items)
+
+        if not items:
+            raise KeyError("popitem(): multi-mapping is empty")
+
+        key, value = items.pop()
+
+        if len(self.getall(key)) == 1:
+            self.popone(key)
+        else:
+            self.clear()
+            self.extend(items)
 
         return key, value
 
