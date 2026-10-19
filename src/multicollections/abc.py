@@ -47,7 +47,7 @@ class KeysView[K](MappingKeysView[K], MultiMappingView):
     @override
     def __len__(self) -> int:
         """Return the number of unique keys in the multi-mapping."""
-        return len(set(self._mapping))
+        return sum(1 for _ in self._mapping)
 
     @override
     def __iter__(self) -> Iterator[K]:
