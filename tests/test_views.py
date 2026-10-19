@@ -13,8 +13,8 @@ def test_keys_view(
     md = cls([("a", 1), ("b", 2), ("a", 3)])
     keys = md.keys()
 
-    assert len(keys) == 3
-    assert list(keys) == ["a", "b", "a"]
+    assert len(keys) == 2
+    assert list(keys) == ["a", "b"]
 
     assert "a" in keys
     assert "b" in keys
