@@ -43,7 +43,7 @@ class ListMultiDict[K, V](MutableMultiMapping[K, V]):
             case _:
                 self._items = list(iterable)
 
-        self._items.extend(kwargs.items())
+        self._items.extend(kwargs.items())  # ty: ignore[invalid-argument-type]
 
     @override
     @with_default
