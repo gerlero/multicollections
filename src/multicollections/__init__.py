@@ -52,7 +52,7 @@ class MultiDict[K, V](MutableMultiMapping[K, V]):
                 self._items = [(k, iterable[k]) for k in iterable.keys()]  # noqa: SIM118
             case _:
                 self._items = list(iterable)
-        self._items.extend(kwargs.items())
+        self._items.extend(kwargs.items())  # ty: ignore[invalid-argument-type]
 
         self._key_indices: dict[K, list[int]] = {}
         if self._items:
